@@ -1,0 +1,9 @@
+<div th:fragment="common(content)">
+    <h1>Dashboard</h1>
+
+    <section>
+        <h2>내 데이터</h2>
+    </section>
+
+    <section th:replace="${content}"></section>
+</div>

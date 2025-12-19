@@ -1,4 +1,4 @@
-package com.messier333.proxyportal.auth;
+package com.messier333.proxyportal.security.controller;
 
 import java.security.Principal;
 

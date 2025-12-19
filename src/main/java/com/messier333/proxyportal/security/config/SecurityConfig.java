@@ -1,4 +1,4 @@
-package com.messier333.proxyportal.config;
+package com.messier333.proxyportal.security.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

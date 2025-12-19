@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="kr">
+<head>
+    <title>Admin Dashboard</title>
+</head>
+<body>
+
+<h1>Proxy Hosts</h1>
+
+<table border="1">
+    <tr>
+        <th>Domain</th>
+    </tr>
+
+    <tr th:each="host : ${proxyHosts}">
+        <td th:text="${host}"></td>
+    </tr>
+
+</table>
+<form action="/" method="get">
+    <button type="submit">return</button>
+</form>
+</body>
+</html>
