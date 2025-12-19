@@ -1,0 +1,7 @@
+<form method="post" action="/login" th:action="@{/login}">
+  <input type="text" name="username" /><br>
+  <input type="password" name="password" /><br>
+  <input type="hidden" th:name="${_csrf.parameterName}"
+                       th:value="${_csrf.token}" />
+  <button type="submit">Login</button>
+</form>
