@@ -9,5 +9,4 @@ public class ProxyportalApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(ProxyportalApplication.class, args);
 	}
-
 }
