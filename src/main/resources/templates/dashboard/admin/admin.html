@@ -1,24 +1,23 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="kr">
-<head>
-    <title>Admin Dashboard</title>
-</head>
+<html xmlns:th="http://www.thymeleaf.org">
 <body>
 
-<h1>Proxy Hosts</h1>
+<div th:replace="dashboard/dashboard-common :: layout(~{::extra})">
+    <div th:fragment="extra">
+        <h2>NPM에서 가져온 호스트</h2>
+        <ul th:if="${npmHosts != null}">
+            <li th:each="d : ${npmHosts}">
+                <a th:href="'http://' + ${d}"
+                   th:text="${d}"
+                   target="_blank" rel="noopener"></a>
+            </li>
+        </ul>
+    </div>
+</div>
 
-<table border="1">
-    <tr>
-        <th>Domain</th>
-    </tr>
-
-    <tr th:each="host : ${proxyHosts}">
-        <td th:text="${host}"></td>
-    </tr>
-
-</table>
 <form action="/" method="get">
-    <button type="submit">return</button>
+    <button type="submit">돌아가기</button>
 </form>
+
 </body>
 </html>
