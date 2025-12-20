@@ -11,17 +11,14 @@ import org.springframework.web.bind.annotation.GetMapping;
 @RequiredArgsConstructor
 public class DashboardController {
     private final ProxyGetterService proxyGetterService;
-
     @GetMapping("/dashboard")
     public String dashboardView(Authentication auth, Model model){
         boolean isAdmin = auth != null && auth.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
-
         if(isAdmin){
             model.addAttribute("npmHosts", proxyGetterService.getProxyHostsList());
             return "dashboard/admin/admin";
         }
-
         return "dashboard/user/user";
     }
 }
