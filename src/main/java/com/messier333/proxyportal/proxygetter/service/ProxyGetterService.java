@@ -1,11 +1,12 @@
 package com.messier333.proxyportal.proxygetter.service;
-
-import com.messier333.proxyportal.proxygetter.client.NpmClient;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-
 import java.util.Arrays;
 import java.util.List;
+
+import org.springframework.stereotype.Service;
+
+import com.messier333.proxyportal.proxygetter.client.NpmClient;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -14,7 +15,7 @@ public class ProxyGetterService {
 
     public List<String> getProxyHostsList() {
         return npmClient.getProxyHosts().stream()
-                .flatMap(a -> Arrays.stream(a.domain_names))
+                .flatMap(a -> Arrays.stream(a.getDomain_names()))
                 .toList();
     }
 }

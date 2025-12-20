@@ -4,4 +4,5 @@ spring:
 
 npm:
   base-url: ${NPM_BASE_URL}
-  token: ${NPM_TOKEN}
+  identity: ${NPM_IDENTITY}
+  secret: ${NPM_SECRET}

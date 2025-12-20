@@ -13,7 +13,12 @@
       "sourceType": "com.messier333.proxyportal.proxygetter.config.NpmProperties"
     },
     {
-      "name": "npm.token",
+      "name": "npm.identity",
+      "type": "java.lang.String",
+      "sourceType": "com.messier333.proxyportal.proxygetter.config.NpmProperties"
+    },
+    {
+      "name": "npm.secret",
       "type": "java.lang.String",
       "sourceType": "com.messier333.proxyportal.proxygetter.config.NpmProperties"
     }
