@@ -1,0 +1,9 @@
+<div class="line-numbers-wrapper"><span class="line-number">1</span><br></div><div class="code-wrapper"><pre><code>&lt;!DOCTYPE html&gt;
+<form th:action="@{/logout}" method="post">
+  <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+  <button type="submit">Logout</button>
+</form>
+
+<form action="/dashboard" method="get">
+    <button type="submit">dashboard</button>
+</form>

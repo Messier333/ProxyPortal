@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<div th:fragment="layout(extra)">
+    <main class="dashboard">
+
+        <!-- ✅ 공통 헤더/프로필/메뉴 -->
+        <header>
+            <h1>Dashboard</h1>
+        </header>
+
+        <!-- ✅ 공통: 유저가 저장한 링크 리스트 -->
+        <section>
+            <h2>My Links</h2>
+
+            <div th:if="${links == null || #lists.isEmpty(links)}">
+                아직 등록된 링크가 없습니다.
+            </div>
+
+            <ul th:if="${links != null && !#lists.isEmpty(links)}">
+                <li th:each="l : ${links}">
+                    <a th:href="@{/go/{id}(id=${l.id})}">
+                        <img th:if="${l.iconUrl}" th:src="${l.iconUrl}" alt="icon" width="20"/>
+                        <span th:text="${l.name}"></span>
+                        <small th:text="${l.url}"></small>
+                    </a>
+                </li>
+            </ul>
+        </section>
+
+        <!-- ✅ 페이지별 추가 영역(관리자만, 또는 유저별 추가 UI 등) -->
+        <section th:replace="${extra}"></section>
+
+    </main>
+</div>
+
+</body>
+</html>
