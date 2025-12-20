@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestClient;
 
 @Configuration
+@SuppressWarnings("unused")
 public class ProxyGetterConfig {
     @SuppressWarnings("null")
     @Bean
