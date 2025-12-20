@@ -5,12 +5,12 @@
 <div th:fragment="layout(extra)">
     <main class="dashboard">
 
-        <!-- ✅ 공통 헤더/프로필/메뉴 -->
+        <!-- 공통 헤더/프로필/메뉴 -->
         <header>
             <h1>Dashboard</h1>
         </header>
 
-        <!-- ✅ 공통: 유저가 저장한 링크 리스트 -->
+        <!-- 공통: 유저가 저장한 링크 리스트 -->
         <section>
             <h2>My Links</h2>
 
@@ -29,7 +29,7 @@
             </ul>
         </section>
 
-        <!-- ✅ 페이지별 추가 영역(관리자만, 또는 유저별 추가 UI 등) -->
+        <!--  페이지별 추가 영역(관리자만, 또는 유저별 추가 UI 등) -->
         <section th:replace="${extra}"></section>
 
     </main>
