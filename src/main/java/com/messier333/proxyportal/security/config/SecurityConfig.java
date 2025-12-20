@@ -13,27 +13,29 @@ import org.springframework.security.web.SecurityFilterChain;
 @Configuration
 @SuppressWarnings("unused")
 public class SecurityConfig {
+
     @Bean
-    SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/login", "/error").permitAll()
-                .requestMatchers("/admin/**", "/api/admin/**").hasRole("ADMIN")
-                .anyRequest().authenticated()
-            )   
-            .formLogin(form -> form
-                .loginPage("/login")
-                .permitAll()
-            )
-            .logout(logout -> logout
-                .logoutUrl("/logout")
-                .permitAll()
-            );
+                .authorizeHttpRequests(auth -> auth
+                                .requestMatchers("/login", "/error").permitAll()
+                                .requestMatchers("/admin/**", "/api/admin/**").hasRole("ADMIN")
+                                .anyRequest().authenticated()
+                )
+                .formLogin(form -> form
+                                .loginPage("/login")
+                                .permitAll()
+                )
+                .logout(logout -> logout
+                                .logoutUrl("/logout")
+                                .permitAll()
+                );
+
         return http.build();
     }
 
     @Bean
-    UserDetailsService users(PasswordEncoder encoder) {
+    public UserDetailsService users(PasswordEncoder encoder) {
         return new InMemoryUserDetailsManager(
             User.withUsername("user")
                 .password(encoder.encode("password"))
@@ -47,7 +49,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    PasswordEncoder passwordEncoder() {
+    public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 }
