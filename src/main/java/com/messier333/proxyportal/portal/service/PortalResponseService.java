@@ -13,7 +13,6 @@ import com.messier333.proxyportal.portal.dto.PortalConfigResponse.TabDto;
 public class PortalResponseService {
     
     public PortalConfigResponse getPortalCategories() {
-
         List<TabDto> tabs = List.of(
                 new TabDto(
                         "myself",
