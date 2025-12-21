@@ -17,7 +17,7 @@
             <div th:if="${links == null || #lists.isEmpty(links)}">
                 아직 등록된 링크가 없습니다.
             </div>
-            
+
             <ul th:if="${links != null && !#lists.isEmpty(links)}">
                 <li th:each="l : ${links}">
                     <a th:href="@{/go/{id}(id=${l.id})}">
