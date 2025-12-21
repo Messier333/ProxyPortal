@@ -50,6 +50,51 @@ public class PortalResponseService {
                                         ), 1
                                 )
                         )
+                ),
+                                new TabDto(
+                        "dev",
+                        "portal/src/img/banners/banner_07.gif",
+                        3, List.of(
+                                new CategoryDto(
+                                        "development",
+                                        List.of(
+                                                new LinkDto("github", "https://github.com", "brand-github", "#a6e3a1", 1),
+                                                new LinkDto("stackoverflow", "https://stackoverflow.com", "brand-stackoverflow", "#fab387", 2),
+                                                new LinkDto("duckdb", "https://app.motherduck.com", "file-type-sql", "#f38ba8", 3),
+                                                new LinkDto("collab", "https://colab.research.google.com", "notebook", "#cba6f7", 4)
+                                        ), 1
+                                )
+                        )
+                ),
+                                new TabDto(
+                        "dev",
+                        "portal/src/img/banners/banner_07.gif",
+                        2, List.of(
+                                new CategoryDto(
+                                        "development",
+                                        List.of(
+                                                new LinkDto("github", "https://github.com", "brand-github", "#a6e3a1", 1),
+                                                new LinkDto("stackoverflow", "https://stackoverflow.com", "brand-stackoverflow", "#fab387", 2),
+                                                new LinkDto("duckdb", "https://app.motherduck.com", "file-type-sql", "#f38ba8", 3),
+                                                new LinkDto("collab", "https://colab.research.google.com", "notebook", "#cba6f7", 4)
+                                        ), 1
+                                )
+                        )
+                ),
+                                new TabDto(
+                        "dev",
+                        "portal/src/img/banners/banner_07.gif",
+                        2, List.of(
+                                new CategoryDto(
+                                        "development",
+                                        List.of(
+                                                new LinkDto("github", "https://github.com", "brand-github", "#a6e3a1", 1),
+                                                new LinkDto("stackoverflow", "https://stackoverflow.com", "brand-stackoverflow", "#fab387", 2),
+                                                new LinkDto("duckdb", "https://app.motherduck.com", "file-type-sql", "#f38ba8", 3),
+                                                new LinkDto("collab", "https://colab.research.google.com", "notebook", "#cba6f7", 4)
+                                        ), 1
+                                )
+                        )
                 )
         );
 
