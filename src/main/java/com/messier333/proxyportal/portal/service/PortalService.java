@@ -10,7 +10,7 @@ import com.messier333.proxyportal.portal.dto.PortalConfigResponse.LinkDto;
 import com.messier333.proxyportal.portal.dto.PortalConfigResponse.TabDto;
 
 @Service
-public class PortalResponseService {
+public class PortalService {
     
     public PortalConfigResponse getPortalCategories() {
         List<TabDto> tabs = List.of(
