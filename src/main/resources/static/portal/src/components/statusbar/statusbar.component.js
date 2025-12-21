@@ -1,4 +1,3 @@
-
 // Statusbar component for tab navigation and widgets
 class Statusbar extends Component {
   // External DOM element references
@@ -20,7 +19,6 @@ class Statusbar extends Component {
    */
   constructor() {
     super();
-
     this.setDependencies();
   }
 
@@ -38,7 +36,11 @@ class Statusbar extends Component {
    * @returns {string[]} Array of CSS file paths
    */
   imports() {
-    return [this.getFontResource('roboto'), this.getIconResource('material'), this.getLibraryResource('awoo')];
+    return [
+      this.getFontResource("roboto"),
+      this.getIconResource("material"),
+      this.getLibraryResource("awoo"),
+    ];
   }
 
   /**
@@ -116,25 +118,11 @@ class Statusbar extends Component {
       #tabs ul li[active]:nth-child(4) ~ li:last-child { margin: 0 0 0 105px; }
       #tabs ul li[active]:nth-child(5) ~ li:last-child { margin: 0 0 0 140px; }
 
-      #tabs ul li[active]:nth-child(1) ~ li:last-child {
-          --flavour: ${CONFIG.palette.green};
-      }
-
-      #tabs ul li[active]:nth-child(2) ~ li:last-child {
-          --flavour: ${CONFIG.palette.peach};
-      }
-
-      #tabs ul li[active]:nth-child(3) ~ li:last-child {
-          --flavour: ${CONFIG.palette.red};
-      }
-
-      #tabs ul li[active]:nth-child(4) ~ li:last-child {
-          --flavour: ${CONFIG.palette.blue};
-      }
-
-      #tabs ul li[active]:nth-child(5) ~ li:last-child {
-          --flavour: ${CONFIG.palette.mauve};
-      }
+      #tabs ul li[active]:nth-child(1) ~ li:last-child { --flavour: ${CONFIG.palette.green}; }
+      #tabs ul li[active]:nth-child(2) ~ li:last-child { --flavour: ${CONFIG.palette.peach}; }
+      #tabs ul li[active]:nth-child(3) ~ li:last-child { --flavour: ${CONFIG.palette.red}; }
+      #tabs ul li[active]:nth-child(4) ~ li:last-child { --flavour: ${CONFIG.palette.blue}; }
+      #tabs ul li[active]:nth-child(5) ~ li:last-child { --flavour: ${CONFIG.palette.mauve}; }
 
       .widgets {
           right: 0;
@@ -211,14 +199,14 @@ class Statusbar extends Component {
       }
 
       .logout-widget {
-        background: transparent;   
-        border: 0;                
+        background: transparent;
+        border: 0;
         font: 300 9pt 'Roboto', sans-serif;
         color: ${CONFIG.palette.text};
-        letter-spacing: .5px;          
-        padding: 10;     
+        letter-spacing: .5px;
+        padding: 10;
       }
-        
+
       .dashboard-widget {
         background: transparent;
         border: 0;
@@ -236,32 +224,37 @@ class Statusbar extends Component {
    */
   template() {
     return `
-        <div id="tabs">
-            <cols>
-                <button class="+ fastlink">
-                  <img class="fastlink-icon" src="portal/src/img/favicon.png"/>
-                </button>
-                <ul class="- indicator"></ul>
-                <div class="+ widgets col-end">
-                    <button class="+ widget dashboard-widget" type="button" title="Dashboard">Dashboard</button>
-                    <button class="+ widget logout-widget" type="button" title="Logout">Logout</button>
-                    <current-time class="+ widget time-widget"></current-time>
-                    <weather-forecast class="+ widget weather"></weather-forecast>
-                </div>
-            </cols>
-        </div>`;
+      <div id="tabs">
+        <cols>
+          <button class="+ fastlink">
+            <img class="fastlink-icon" src="portal/src/img/favicon.png"/>
+          </button>
+          <ul class="- indicator"></ul>
+          <div class="+ widgets col-end">
+            <button class="+ widget dashboard-widget" type="button" title="Dashboard">Dashboard</button>
+            <button class="+ widget logout-widget" type="button" title="Logout">Logout</button>
+            <current-time class="+ widget time-widget"></current-time>
+            <weather-forecast class="+ widget weather"></weather-forecast>
+          </div>
+        </cols>
+      </div>
+    `;
   }
 
   /**
    * Sets up event listeners for tab interactions and navigation
    */
   setEvents() {
+    // 탭 클릭 -> 탭 변경
     this.refs.tabs.forEach((tab) => (tab.onclick = ({ target }) => this.handleTabChange(target)));
 
+    // ✅ 휠로 탭 전환 제거: document.onwheel 등록 안 함
+    // document.onwheel = (e) => this.handleWheelScroll(e);
+
+    // 키보드 숫자키로 탭 전환은 유지
     document.onkeydown = (e) => this.handleKeyPress(e);
-    document.onwheel = (e) => this.handleWheelScroll(e);
+
     this.refs.fastlink.onclick = () => {
-      console.log(CONFIG.fastlink);
       if (CONFIG.config.fastlink) {
         window.location.href = CONFIG.config.fastlink;
       }
@@ -273,39 +266,36 @@ class Statusbar extends Component {
     }
 
     this.shadow.querySelector(".dashboard-widget")?.addEventListener("click", (e) => {
-  e.stopPropagation();
-  window.location.href = "/dashboard";
-});
-
-
+      e.stopPropagation();
+      window.location.href = "/dashboard";
+    });
 
     this.shadow.querySelector(".logout-widget")?.addEventListener("click", async (e) => {
-  e.stopPropagation();
+      e.stopPropagation();
 
-  const tokenMeta = document.querySelector('meta[name="_csrf"]');
-  const headerMeta = document.querySelector('meta[name="_csrf_header"]');
+      const tokenMeta = document.querySelector('meta[name="_csrf"]');
+      const headerMeta = document.querySelector('meta[name="_csrf_header"]');
 
-  const token = tokenMeta?.getAttribute("content");
-  const header = headerMeta?.getAttribute("content");
+      const token = tokenMeta?.getAttribute("content");
+      const header = headerMeta?.getAttribute("content");
 
-  if (!token || !header) {
-    console.error("CSRF meta not found. Check index.html meta tags.");
-    return;
-  }
+      if (!token || !header) {
+        console.error("CSRF meta not found. Check index.html meta tags.");
+        return;
+      }
 
-  const res = await fetch("/logout", {
-    method: "POST",
-    headers: { [header]: token },
-    credentials: "same-origin",
-  });
+      const res = await fetch("/logout", {
+        method: "POST",
+        headers: { [header]: token },
+        credentials: "same-origin",
+      });
 
-  // 성공/실패와 상관없이 로그인 페이지로 보내고 싶으면 아래처럼
-  if (res.ok || res.status === 302) {
-    window.location.href = "/login";
-  } else {
-    console.error("Logout failed:", res.status);
-  }
-});
+      if (res.ok || res.status === 302) {
+        window.location.href = "/login";
+      } else {
+        console.error("Logout failed:", res.status);
+      }
+    });
   }
 
   /**
@@ -320,7 +310,7 @@ class Statusbar extends Component {
    */
   openLastVisitedTab() {
     if (!CONFIG.openLastVisitedTab) return;
-    this.activateByKey(localStorage.lastVisitedTab);
+    this.activateByKey(Number(localStorage.lastVisitedTab ?? 0));
   }
 
   /**
@@ -332,33 +322,6 @@ class Statusbar extends Component {
   }
 
   /**
-   * Handles mouse wheel scrolling for tab navigation
-   * @param {WheelEvent} event - The wheel event object
-   */
-  handleWheelScroll(event) {
-    if (!event) return;
-
-    let { target, wheelDelta } = event;
-
-    if (target.shadow && target.shadow.activeElement) return;
-
-    // Find currently active tab
-    let activeTab = -1;
-    this.refs.tabs.forEach((tab, index) => {
-      if (tab.getAttribute("active") === "") {
-        activeTab = index;
-      }
-    });
-
-    // Navigate to next or previous tab based on wheel direction
-    if (wheelDelta > 0) {
-      this.activateByKey((activeTab + 1) % (this.refs.tabs.length - 1));
-    } else {
-      this.activateByKey(activeTab - 1 < 0 ? this.refs.tabs.length - 2 : activeTab - 1);
-    }
-  }
-
-  /**
    * Handles keyboard shortcuts for tab navigation
    * @param {KeyboardEvent} event - The keyboard event object
    */
@@ -367,6 +330,8 @@ class Statusbar extends Component {
 
     let { target, key } = event;
 
+    // 입력 중(검색창 등)에는 탭 전환 금지
+    if (document.activeElement !== document.body) return;
     if (target.shadow && target.shadow.activeElement) return;
 
     // Activate tab by number key (1-5)
