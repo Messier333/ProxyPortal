@@ -11,12 +11,14 @@ public record PortalConfigResponse(
     public record TabDto(
             String name,
             String backgroundUrl,
+            Integer sortOrder,
             List<CategoryDto> categories
     ) {}
 
     public record CategoryDto(
             String name,
-            List<LinkDto> links
+            List<LinkDto> links,
+            Integer sortOrder
     ) {}
 
     public record LinkDto(

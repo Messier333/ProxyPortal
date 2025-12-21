@@ -17,13 +17,13 @@ public class PortalResponseService {
                 new TabDto(
                         "myself",
                         "portal/src/img/banners/banner_09.gif",
-                        List.of(
+                        1, List.of(
                                 new CategoryDto(
                                         "bookmarks",
                                         List.of(
                                                 new LinkDto("raindrop", "https://app.raindrop.io", "droplet-bolt", "#a6e3a1", 1),
                                                 new LinkDto("musicForProgramming();", "https://musicforprogramming.net", "binary-tree", "#fab387", 2)
-                                        )
+                                        ), 1
                                 ),
                                 new CategoryDto(
                                         "workspace",
@@ -32,14 +32,14 @@ public class PortalResponseService {
                                                 new LinkDto("calendar", "https://calendar.google.com", "calendar-filled", "#fab387", 2),
                                                 new LinkDto("sheets", "https://docs.google.com/spreadsheets", "table", "#f38ba8", 3),
                                                 new LinkDto("drive", "https://drive.google.com/drive/home", "brand-google-drive", "#89b4fa", 4)
-                                        )
+                                        ), 2
                                 )
                         )
                 ),
                 new TabDto(
                         "dev",
                         "portal/src/img/banners/banner_07.gif",
-                        List.of(
+                        2, List.of(
                                 new CategoryDto(
                                         "development",
                                         List.of(
@@ -47,7 +47,7 @@ public class PortalResponseService {
                                                 new LinkDto("stackoverflow", "https://stackoverflow.com", "brand-stackoverflow", "#fab387", 2),
                                                 new LinkDto("duckdb", "https://app.motherduck.com", "file-type-sql", "#f38ba8", 3),
                                                 new LinkDto("collab", "https://colab.research.google.com", "notebook", "#cba6f7", 4)
-                                        )
+                                        ), 1
                                 )
                         )
                 )

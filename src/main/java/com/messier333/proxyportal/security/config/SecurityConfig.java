@@ -11,7 +11,6 @@ import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
-@SuppressWarnings("unused")
 public class SecurityConfig {
 
     @Bean

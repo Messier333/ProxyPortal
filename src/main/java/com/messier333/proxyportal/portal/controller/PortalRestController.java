@@ -13,7 +13,6 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api/portal/")
 @RequiredArgsConstructor
 public class PortalRestController {
-    @SuppressWarnings("unused")
     private final PortalResponseService portalResponseService;
 
     @GetMapping("categories")
