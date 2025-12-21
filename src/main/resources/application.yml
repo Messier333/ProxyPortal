@@ -1,6 +1,8 @@
 spring:
   application:
     name: proxyportal
+  jackson:
+    property-naming-strategy: SNAKE_CASE
 
 npm:
   base-url: ${NPM_BASE_URL}

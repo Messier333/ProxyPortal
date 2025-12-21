@@ -27,6 +27,9 @@
   <script th:src="@{portal/src/common/theme.js}"></script>
   <script th:src="@{portal/src/common/component.js}"></script>
 
+
+  <script id="portal-config" type="application/json" th:utext="${portalConfigJson}"></script>
+
   <!-- CONFIG 정의 파일 -->
   <script th:src="@{portal/userconfig.js}"></script>
 
