@@ -11,6 +11,6 @@ public class PortalController {
     }
     @GetMapping("/portal")
     public String showPortal() {
-        return "index";
+        return "portal/index";
     }
 }

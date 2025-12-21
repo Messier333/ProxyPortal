@@ -1,0 +1,97 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="utf-8" />
+  <meta name="author" content="Volodymyr Pivoshenko (https://github.com/pivoshenko)" />
+  <meta name="_csrf" th:content="${_csrf.token}">
+  <meta name="_csrf_header" th:content="${_csrf.headerName}">
+
+  <link href="https://cdn.jsdelivr.net/gh/monzanifabio/cryptofont/cryptofont.css" rel="stylesheet" />
+
+  <link rel="stylesheet" th:href="@{portal/src/css/style.css}" type="text/css" />
+  <link rel="stylesheet" th:href="@{portal/src/css/tabler-icons.min.css}" />
+  <link rel="icon" type="image/png" th:href="@{portal/src/img/favicon.png}" />
+
+  <title>~/.config</title>
+</head>
+
+<body>
+  <tabs-list></tabs-list>
+
+  <script th:src="@{portal/src/common/palette.js}"></script>
+  <script th:src="@{portal/src/common/utils.js}"></script>
+  <script th:src="@{portal/src/common/storage.js}"></script>
+  <script th:src="@{portal/src/common/actions.js}"></script>
+  <script th:src="@{portal/src/common/config.js}"></script>
+  <script th:src="@{portal/src/common/strftime.js}"></script>
+  <script th:src="@{portal/src/common/theme.js}"></script>
+  <script th:src="@{portal/src/common/component.js}"></script>
+
+  <!-- CONFIG 정의 파일 -->
+  <script th:src="@{portal/userconfig.js}"></script>
+
+  <script>
+    // Load fonts and CSS based on configuration
+    function loadFonts() {
+      const head = document.getElementsByTagName('head')[0];
+
+      if (CONFIG.localFonts) {
+        const awooLink = document.createElement('link');
+        awooLink.rel = 'stylesheet';
+        awooLink.type = 'text/css';
+        awooLink.href = 'portal/src/css/awoo-local.min.css';
+        head.appendChild(awooLink);
+
+        const localFontLinks = [
+          'portal/src/fonts/roboto-local.css',
+          'portal/src/fonts/nunito-local.css',
+          'portal/src/fonts/raleway-local.css',
+          'portal/src/fonts/material-icons-local.css'
+        ];
+
+        localFontLinks.forEach(href => {
+          const link = document.createElement('link');
+          link.rel = 'stylesheet';
+          link.type = 'text/css';
+          link.href = href;
+          head.appendChild(link);
+        });
+      } else {
+        const awooLink = document.createElement('link');
+        awooLink.rel = 'stylesheet';
+        awooLink.type = 'text/css';
+        awooLink.href = '/portal/src/css/awoo.min.css';
+        head.appendChild(awooLink);
+
+        const googleFontLinks = [
+          'https://fonts.googleapis.com/css?family=Nunito:200|Roboto:100,400,700|Raleway:600',
+          'https://fonts.googleapis.com/icon?family=Material+Icons'
+        ];
+
+        googleFontLinks.forEach(href => {
+          const link = document.createElement('link');
+          link.rel = 'stylesheet';
+          link.type = 'text/css';
+          link.href = href;
+          head.appendChild(link);
+        });
+      }
+    }
+
+    loadFonts();
+  </script>
+
+  <script th:src="@{portal/src/components/tabs/tabs.component.js}"></script>
+
+  <script th:src="@{portal/src/components/weather/weather.api.js}"></script>
+  <script th:src="@{portal/src/components/weather/weather.component.js}"></script>
+
+  <script th:src="@{portal/src/components/user-actions/user-actions.component.js}"></script>
+
+  <script th:src="@{portal/src/components/clock/clock.component.js}"></script>
+  <script th:src="@{portal/src/components/statusbar/statusbar.component.js}"></script>
+  <script th:src="@{portal/src/components/search/search.component.js}"></script>
+
+  <script th:src="@{portal/src/common/module.js}"></script>
+</body>
+</html>
