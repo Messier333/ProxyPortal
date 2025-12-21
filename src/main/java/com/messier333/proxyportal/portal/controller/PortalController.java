@@ -25,7 +25,6 @@ public class PortalController {
     public String showPortal(Model model) throws JsonProcessingException {
         PortalConfigResponse config = portalResponseService.getPortalCategories();
         String portalConfigJson = objectMapper.writeValueAsString(config);
-        System.out.println(portalConfigJson);
         model.addAttribute("portalConfigJson", portalConfigJson);
         return "portal/index";
     }
