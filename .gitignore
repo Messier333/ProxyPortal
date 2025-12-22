@@ -33,6 +33,7 @@ Thumbs.db
 
 target/
 build/
+bin/
 .gradle/
 out/
 *.log
