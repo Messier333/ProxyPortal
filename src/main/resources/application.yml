@@ -8,3 +8,8 @@ npm:
   base-url: ${NPM_BASE_URL}
   identity: ${NPM_IDENTITY}
   secret: ${NPM_SECRET}
+
+logging:
+  level:
+    org.springframework.jdbc.datasource: DEBUG
+    com.zaxxer.hikari: DEBUG

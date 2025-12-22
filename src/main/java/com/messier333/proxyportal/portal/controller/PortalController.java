@@ -6,10 +6,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.messier333.proxyportal.portal.dto.PortalConfigResponse;
 import com.messier333.proxyportal.portal.service.PortalService;
 
 import lombok.RequiredArgsConstructor;
+
+import java.security.Principal;
 
 @Controller
 @RequiredArgsConstructor
@@ -22,9 +23,8 @@ public class PortalController {
         return "redirect:/portal";
     }
     @GetMapping("/portal")
-    public String showPortal(Model model) throws JsonProcessingException {
-        PortalConfigResponse config = portalService.getPortalCategories();
-        String portalConfigJson = objectMapper.writeValueAsString(config);
+    public String showPortal(Model model, Principal principal) throws JsonProcessingException {
+        String portalConfigJson = objectMapper.writeValueAsString(portalService.getPortalTabs(principal.getName()));
         model.addAttribute("portalConfigJson", portalConfigJson);
         return "portal/index";
     }

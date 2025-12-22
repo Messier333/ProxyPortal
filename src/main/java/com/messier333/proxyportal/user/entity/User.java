@@ -23,6 +23,8 @@ public class User {
     private String username;
     @Column(nullable = false)
     private String password;
+    @Column
+    private String nickname;
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role;
@@ -33,5 +35,11 @@ public class User {
         user.password = encodedPassword;
         user.role = role;
         return user;
+    }
+    public void changeNickname(String Nickname) {
+        this.nickname = nickname;
+    }
+    public void changePassword(String encodedPassword){
+        this.password = encodedPassword;
     }
 }

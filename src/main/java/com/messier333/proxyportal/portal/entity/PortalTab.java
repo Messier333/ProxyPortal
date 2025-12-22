@@ -2,16 +2,7 @@ package com.messier333.proxyportal.portal.entity;
 
 import com.messier333.proxyportal.user.entity.User;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Index;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -19,7 +10,7 @@ import lombok.NoArgsConstructor;
 @Entity
 @Getter
 @Table(
-    name = "protal_tabs",
+    name = "portal_tabs",
     indexes = @Index( 
         name = "idx_portal_tabs_user_sort", columnList = "user_id, sort_order" 
     ),
@@ -33,7 +24,7 @@ public class PortalTab {
     @Id @GeneratedValue(strategy=GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
