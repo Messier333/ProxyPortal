@@ -1,5 +1,11 @@
 package com.messier333.proxyportal.portal.service;
 
+import java.util.List;
+import java.util.Objects;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.messier333.proxyportal.portal.dto.request.CategoryCreateRequest;
 import com.messier333.proxyportal.portal.dto.request.LinkCreateRequest;
 import com.messier333.proxyportal.portal.dto.request.TabCreateRequest;
@@ -15,11 +21,8 @@ import com.messier333.proxyportal.portal.repository.PortalLinkRepository;
 import com.messier333.proxyportal.portal.repository.PortalQueryRepository;
 import com.messier333.proxyportal.portal.repository.PortalTabRepository;
 import com.messier333.proxyportal.user.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -44,6 +47,7 @@ public class PortalService {
                 tabCreateRequest.backgroundUrl(),
                 tabCreateRequest.sortOrder()
         );
+        Objects.requireNonNull(portalTab, "portalTab must not be null");
         PortalTab saved = portalTabRepository.save(portalTab);
         return new TabResponse(
                 saved.getId(),
@@ -64,6 +68,8 @@ public class PortalService {
                 categoryCreateRequest.name(),
                 categoryCreateRequest.sortOrder()
         );
+
+        Objects.requireNonNull(portalCategory, "portalCategory must not be null");
         PortalCategory saved = portalCategoryRepository.save(portalCategory);
         return new CategoryResponse(
                 saved.getId(),
@@ -86,6 +92,7 @@ public class PortalService {
                 linkCreateRequest.iconColor(),
                 linkCreateRequest.sortOrder()
         );
+        Objects.requireNonNull(portalLink, "portalLink must not be null");
         PortalLink saved = portalLinkRepository.save(portalLink);
         return new LinkResponse(
                 saved.getId(),

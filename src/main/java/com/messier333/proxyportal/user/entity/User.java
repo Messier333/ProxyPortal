@@ -36,7 +36,7 @@ public class User {
         user.role = role;
         return user;
     }
-    public void changeNickname(String Nickname) {
+    public void changeNickname(String nickname) {
         this.nickname = nickname;
     }
     public void changePassword(String encodedPassword){
