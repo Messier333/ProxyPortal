@@ -1,5 +1,12 @@
 package com.messier333.proxyportal.portal.repository.impl;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.stereotype.Repository;
+
 import com.messier333.proxyportal.portal.dto.response.CategoryResponse;
 import com.messier333.proxyportal.portal.dto.response.LinkResponse;
 import com.messier333.proxyportal.portal.dto.response.PortalTabsResponse;
@@ -11,10 +18,8 @@ import com.messier333.proxyportal.portal.entity.QPortalTab;
 import com.messier333.proxyportal.portal.repository.PortalQueryRepository;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Repository;
 
-import java.util.*;
+import lombok.RequiredArgsConstructor;
 
 @Repository
 @RequiredArgsConstructor
@@ -45,7 +50,6 @@ public class PortalQueryRepositoryImpl implements PortalQueryRepository {
                 .fetch();
         
         Map<Long, TabBuilder> tabMap = new LinkedHashMap<>();
-
         for (PortalRow r : rows) {
             TabBuilder tb = tabMap.computeIfAbsent(r.tabId(), id ->
                 new TabBuilder(id, r.tabName(), r.tabBg(), r.tabSort())
