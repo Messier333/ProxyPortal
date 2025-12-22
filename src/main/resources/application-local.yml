@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:h2:file:./h2db/portal
+    url: jdbc:h2:mem:portal;DB_CLOSE_DELAY=-1;MODE=MySQL
     driver-class-name: org.h2.Driver
     username: sa
     password:
@@ -13,10 +13,8 @@ spring:
   sql:
     init:
       mode: always
-
+      data-locations: classpath:db/data.sql
   jpa:
     hibernate:
-      ddl-auto: none
-
-  jackson:
-    property-naming-strategy: SNAKE_CASE
+      ddl-auto: create-drop
+    defer-datasource-initialization: true

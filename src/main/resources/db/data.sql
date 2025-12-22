@@ -1,7 +1,8 @@
 -- =====================
 -- USER (id=1)
 -- =====================
-MERGE INTO users KEY(id)
+MERGE INTO users (id, username, password, role)
+    KEY(id)
     VALUES (1, 'admin', '{noop}local', 'ADMIN');
 
 -- =====================
