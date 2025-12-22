@@ -19,8 +19,8 @@ import java.util.*;
 @Repository
 @RequiredArgsConstructor
 public class PortalQueryRepositoryImpl implements PortalQueryRepository {
-
     private final JPAQueryFactory queryFactory;
+
     @Override
     public PortalTabsResponse findTabsByUsername(String username) {
         QPortalTab tab = QPortalTab.portalTab;
@@ -28,51 +28,47 @@ public class PortalQueryRepositoryImpl implements PortalQueryRepository {
         QPortalLink link = QPortalLink.portalLink;
 
         List<PortalRow> rows = queryFactory
-                .select(Projections.constructor(
-                        PortalRow.class,
-                        tab.id, tab.name, tab.backgroundUrl, tab.sortOrder,
-                        category.id, category.name, category.sortOrder,
-                        link.id, link.name, link.url, link.icon, link.iconColor, link.sortOrder
-                ))
+            .select(Projections.constructor(
+                    PortalRow.class,
+                    tab.id, tab.name, tab.backgroundUrl, tab.sortOrder,
+                    category.id, category.name, category.sortOrder,
+                    link.id, link.name, link.url, link.icon, link.iconColor, link.sortOrder
+                    ))
                 .from(tab)
                 .leftJoin(category).on(category.tab.eq(tab))
                 .leftJoin(link).on(link.category.eq(category))
                 .where(tab.user.username.eq(username))
                 .orderBy(
-                        tab.sortOrder.asc(), tab.id.asc(),
-                        category.sortOrder.asc(), category.id.asc(),
-                        link.sortOrder.asc(), link.id.asc()
-                )
+                    tab.sortOrder.asc(), tab.id.asc(),
+                    category.sortOrder.asc(), category.id.asc(),
+                    link.sortOrder.asc(), link.id.asc())
                 .fetch();
-
+        
         Map<Long, TabBuilder> tabMap = new LinkedHashMap<>();
 
         for (PortalRow r : rows) {
             TabBuilder tb = tabMap.computeIfAbsent(r.tabId(), id ->
-                    new TabBuilder(id, r.tabName(), r.tabBg(), r.tabSort())
+                new TabBuilder(id, r.tabName(), r.tabBg(), r.tabSort())
             );
-
             if (r.categoryId() != null) {
                 CategoryBuilder cb = tb.categoryMap.computeIfAbsent(r.categoryId(), cid ->
-                        new CategoryBuilder(cid, r.categoryName(), r.categorySort())
+                    new CategoryBuilder(cid, r.categoryName(), r.categorySort())
                 );
-
                 if (r.linkId() != null) {
                     cb.links.add(new LinkResponse(
-                            r.linkId(),
-                            r.linkName(),
-                            r.linkUrl(),
-                            r.linkIcon(),
-                            r.linkIconColor(),
-                            r.linkSort()
+                        r.linkId(),
+                        r.linkName(),
+                        r.linkUrl(),
+                        r.linkIcon(),
+                        r.linkIconColor(),
+                        r.linkSort()
                     ));
                 }
             }
         }
         List<TabResponse> tabs = tabMap.values().stream()
-                .map(TabBuilder::build)
-                .toList();
-
+            .map(TabBuilder::build)
+            .toList();
         return new PortalTabsResponse(tabs);
     }
 
