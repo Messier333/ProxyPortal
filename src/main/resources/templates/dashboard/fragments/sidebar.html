@@ -31,6 +31,13 @@
         <span class="sb__icon">👤</span>
         <span>계정 추가</span>
       </a>
+
+        <a class="sb__link"
+         th:classappend="${active}=='account' ? ' is-active' : ''"
+         th:href="@{/}">
+        <span class="sb__icon">☰</span>
+        <span>포탈</span>
+      </a>
     </nav>
 
     <div class="sb__footer">
