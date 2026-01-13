@@ -1,0 +1,11 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" th:fragment="head(title)">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title th:text="${title}">Dashboard</title>
+
+  <link rel="stylesheet" th:href="@{/dashboard/css/mocha.css}"/>
+  <script defer th:src="@{/dashboard/js/dashboard.js}"></script>
+</head>
+</html>

@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" th:fragment="topbar(pageTitle)">
+<body>
+  <header class="top">
+    <div class="top__title">
+      <div class="top__h" th:text="${pageTitle}">Dashboard</div>
+      <div class="top__p">탭 / 카테고리 / 링크 관리</div>
+    </div>
+
+    <div class="top__right">
+      <a class="pill" th:href="@{/}">메인</a>
+      <a class="pill" th:href="@{/dashboard/account/add}">계정추가</a>
+    </div>
+  </header>
+</body>
+</html>
