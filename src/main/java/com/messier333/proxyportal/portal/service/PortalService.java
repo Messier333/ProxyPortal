@@ -44,7 +44,6 @@ public class PortalService {
                         () -> new IllegalArgumentException("User not found")
                 ),
                 tabCreateRequest.name(),
-                tabCreateRequest.backgroundUrl(),
                 tabCreateRequest.sortOrder()
         );
         Objects.requireNonNull(portalTab, "portalTab must not be null");
@@ -52,7 +51,6 @@ public class PortalService {
         return new TabResponse(
                 saved.getId(),
                 saved.getName(),
-                saved.getBackgroundUrl(),
                 saved.getSortOrder(),
                 List.of()
         );

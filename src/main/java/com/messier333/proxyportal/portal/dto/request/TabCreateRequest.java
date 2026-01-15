@@ -1,13 +1,12 @@
 package com.messier333.proxyportal.portal.dto.request;
 
+import java.util.List;
+
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
-import java.util.List;
-
 public record TabCreateRequest(
         @NotBlank String name,
-        @NotBlank String backgroundUrl,
         @NotNull Integer sortOrder,
         List<CategoryCreateRequest> categories
 ) {

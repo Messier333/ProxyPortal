@@ -79,13 +79,11 @@ public class PortalQueryRepositoryImpl implements PortalQueryRepository {
     private static class TabBuilder {
         final Long id;
         final String name;
-        final String bg;
         final Integer sort;
         final Map<Long, CategoryBuilder> categoryMap = new LinkedHashMap<>();
         TabBuilder(Long id, String name, String bg, Integer sort) {
             this.id = id;
             this.name = name;
-            this.bg = bg;
             this.sort = sort;
         }
 
@@ -93,7 +91,7 @@ public class PortalQueryRepositoryImpl implements PortalQueryRepository {
             List<CategoryResponse> categories = categoryMap.values().stream()
                     .map(CategoryBuilder::build)
                     .toList();
-            return new TabResponse(id, name, bg, sort, categories);
+            return new TabResponse(id, name, sort, categories);
         }
     }
     private static class CategoryBuilder {
