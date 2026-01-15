@@ -41,9 +41,6 @@ public class PortalTab {
     @Column(nullable=false)
     private String name;
 
-    @Column(name = "background_url")
-    private String backgroundUrl;
-
     @Column(name = "sort_order", nullable = false)
     private int sortOrder;
 

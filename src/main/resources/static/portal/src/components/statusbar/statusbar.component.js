@@ -1,9 +1,8 @@
 // Statusbar component for tab navigation and widgets
 class Statusbar extends Component {
-  // External DOM element references
   externalRefs = {};
 
-  // CSS selector references for DOM elements
+  // ⚠️ 이 프레임워크는 refs를 자동으로 DOM으로 치환할 수 있음
   refs = {
     categories: ".categories ul",
     tabs: "#tabs ul li",
@@ -11,30 +10,32 @@ class Statusbar extends Component {
     fastlink: ".fastlink",
   };
 
-  // Currently active tab index
+  // ✅ querySelector용 "고정 selector" (절대 DOM으로 바뀌지 않음)
+  staticSelectors = {
+    tabs: "#tabs ul li",
+    indicator: ".indicator",
+    fastlink: ".fastlink",
+  };
+
+  dom = {
+    tabs: null,       // NodeList
+    indicator: null,  // Element|null
+    fastlink: null,   // Element|null
+  };
+
   currentTabIndex = 0;
 
-  /**
-   * Initialise the statusbar component
-   */
   constructor() {
     super();
     this.setDependencies();
   }
 
-  /**
-   * Sets up component dependencies and external references
-   */
   setDependencies() {
     this.externalRefs = {
       categories: this.parentNode.querySelectorAll(this.refs.categories),
     };
   }
 
-  /**
-   * Returns CSS import dependencies for this component
-   * @returns {string[]} Array of CSS file paths
-   */
   imports() {
     return [
       this.getFontResource("roboto"),
@@ -43,76 +44,39 @@ class Statusbar extends Component {
     ];
   }
 
-  /**
-   * Generates component CSS styles
-   * @returns {string} CSS styles for the statusbar
-   */
   style() {
     return `
       *:not(:defined) { display: none; }
-
-      #tabs,
-      #tabs .widgets,
-      #tabs ul li:last-child {
-          position: absolute;
-      }
-
-      #tabs {
-          width: 100%;
-          height: 100%;
-      }
-
+      #tabs, #tabs .widgets, #tabs ul li:last-child { position: absolute; }
+      #tabs { width: 100%; height: 100%; }
       #tabs ul {
-          counter-reset: tabs;
-          height: 100%;
-          position: relative;
-          list-style: none;
-          margin-left: 1em;
+        counter-reset: tabs; height: 100%; position: relative;
+        list-style: none; margin-left: 1em;
       }
-
       #tabs ul li:not(:last-child)::after {
-          content: counter(tabs, decimal);
-          counter-increment: tabs;
-          display: flex;
-          width: 100%;
-          height: 100%;
-          position: relative;
-          align-items: center;
-          text-align: center;
-          justify-content: center;
+        content: counter(tabs, decimal);
+        counter-increment: tabs;
+        display: flex; width: 100%; height: 100%;
+        position: relative; align-items: center;
+        text-align: center; justify-content: center;
       }
-
       #tabs ul li:not(:last-child) {
-          width: 35px;
-          text-align: center;
-          font: 700 13px 'Yu Gothic', serif;
-          color: ${CONFIG.palette.text};
-          padding: 6px 0;
-          transition: all .1s;
-          cursor: pointer;
-          line-height: 0;
-          height: 100%;
+        width: 35px; text-align: center;
+        font: 700 13px 'Yu Gothic', serif;
+        color: ${CONFIG.palette.text};
+        padding: 6px 0; transition: all .1s;
+        cursor: pointer; line-height: 0; height: 100%;
       }
-
-      #tabs ul li:not(:last-child):hover {
-          background: ${CONFIG.palette.surface0};
-      }
-
+      #tabs ul li:not(:last-child):hover { background: ${CONFIG.palette.surface0}; }
       #tabs ul li:last-child {
-          --flavour: var(--accent);
-          width: 35px;
-          height: 3px;
-          background: var(--flavour);
-          bottom: 0;
-          transition: all .3s;
+        --flavour: var(--accent);
+        width: 35px; height: 3px;
+        background: var(--flavour);
+        bottom: 0; transition: all .3s;
       }
-
       #tabs ul li[active]:not(:last-child) {
-          color: ${CONFIG.palette.text};
-          font-size: 13px;
-          padding: 6px 0;
+        color: ${CONFIG.palette.text}; font-size: 13px; padding: 6px 0;
       }
-
       #tabs ul li[active]:nth-child(2) ~ li:last-child { margin: 0 0 0 35px; }
       #tabs ul li[active]:nth-child(3) ~ li:last-child { margin: 0 0 0 70px; }
       #tabs ul li[active]:nth-child(4) ~ li:last-child { margin: 0 0 0 105px; }
@@ -124,109 +88,49 @@ class Statusbar extends Component {
       #tabs ul li[active]:nth-child(4) ~ li:last-child { --flavour: ${CONFIG.palette.blue}; }
       #tabs ul li[active]:nth-child(5) ~ li:last-child { --flavour: ${CONFIG.palette.mauve}; }
 
-      .widgets {
-          right: 0;
-          margin: auto;
-          height: 32px;
-          color: #fff;
-          font-size: 12px;
-      }
-
-      .widgets:hover .edit {
-          margin: 0;
-      }
-
-      .widget {
-          position: relative;
-          height: 100%;
-          padding: 0 1em;
-      }
-
-      .widget.time-widget {
-          min-width: max-content;
-      }
-
-      .widget:first-child {
-          padding-left: 2em;
-      }
-
-      .widget:last-child {
-          padding-right: 2em;
-      }
-
-      .widget:hover {
-          cursor: pointer;
-          background: rgba(255, 255, 255, .05);
-      }
+      .widgets { right: 0; margin: auto; height: 32px; color: #fff; font-size: 12px; }
+      .widget { position: relative; height: 100%; padding: 0 1em; }
+      .widget.time-widget { min-width: max-content; }
+      .widget:first-child { padding-left: 2em; }
+      .widget:last-child { padding-right: 2em; }
+      .widget:hover { cursor: pointer; background: rgba(255, 255, 255, .05); }
 
       #tabs > cols {
-          position: relative;
-          grid-template-columns: [chat-tab] 35px [tabs] auto [widgets] auto;
+        position: relative;
+        grid-template-columns: [chat-tab] 35px [tabs] auto [widgets] auto;
       }
-
-      #tabs .time span {
-          font-weight: 400;
-      }
-
-      #tabs i {
-          font-size: 14pt !important;
-      }
+      #tabs .time span { font-weight: 400; }
+      #tabs i { font-size: 14pt !important; }
 
       .widget:not(:first-child)::before {
-          content: '';
-          position: absolute;
-          display: block;
-          left: 0;
-          height: calc(100% - 15px);
-          width: 1px;
-          background: rgb(255 255 255 / 10%);
+        content: '';
+        position: absolute; display: block; left: 0;
+        height: calc(100% - 15px); width: 1px;
+        background: rgb(255 255 255 / 10%);
       }
 
       .fastlink {
-          border: 0;
-          background: ${CONFIG.palette.mantle};
-          color: ${CONFIG.palette.green};
-          cursor: pointer;
-          border-radius: 5px 15px 15px 5px;
+        border: 0; background: ${CONFIG.palette.mantle};
+        color: ${CONFIG.palette.green}; cursor: pointer;
+        border-radius: 5px 15px 15px 5px;
       }
+      .fastlink:hover { filter: brightness(1.2); }
+      .fastlink-icon { width: 70%; }
 
-      .fastlink:hover {
-          filter: brightness(1.2);
-      }
-
-      .fastlink-icon {
-        width: 70%;
-      }
-
-      .logout-widget {
-        background: transparent;
-        border: 0;
+      .logout-widget, .dashboard-widget {
+        background: transparent; border: 0;
         font: 300 9pt 'Roboto', sans-serif;
         color: ${CONFIG.palette.text};
-        letter-spacing: .5px;
-        padding: 10;
-      }
-
-      .dashboard-widget {
-        background: transparent;
-        border: 0;
-        font: 300 9pt 'Roboto', sans-serif;
-        color: ${CONFIG.palette.text};
-        letter-spacing: .5px;
-        padding: 10;
+        letter-spacing: .5px; padding: 10;
       }
     `;
   }
 
-  /**
-   * Generates HTML template for the statusbar component
-   * @returns {string} HTML template with tabs and widgets
-   */
   template() {
     return `
       <div id="tabs">
         <cols>
-          <button class="+ fastlink">
+          <button class="+ fastlink" type="button">
             <img class="fastlink-icon" src="portal/src/img/favicon.png"/>
           </button>
           <ul class="- indicator"></ul>
@@ -241,26 +145,59 @@ class Statusbar extends Component {
     `;
   }
 
-  /**
-   * Sets up event listeners for tab interactions and navigation
-   */
+  // selector/element 모두 안전 처리
+  getEl(selOrEl, fallbackSelector) {
+    if (!selOrEl) return this.shadow.querySelector(fallbackSelector);
+    if (selOrEl instanceof Element) return selOrEl;
+    if (typeof selOrEl === "string") return this.shadow.querySelector(selOrEl);
+    return this.shadow.querySelector(fallbackSelector);
+  }
+
+  // NodeList가 필요할 때
+  getAll(selOrEls, fallbackSelector) {
+    if (!selOrEls) return this.shadow.querySelectorAll(fallbackSelector);
+    if (typeof selOrEls === "string") return this.shadow.querySelectorAll(selOrEls);
+    if (typeof selOrEls.forEach === "function") return selOrEls; // NodeList/Array
+    return this.shadow.querySelectorAll(fallbackSelector);
+  }
+
+  cacheDom() {
+    this.dom.fastlink = this.getEl(this.refs.fastlink, this.staticSelectors.fastlink);
+    this.dom.indicator = this.getEl(this.refs.indicator, this.staticSelectors.indicator);
+
+    // ✅ tabs는 refs가 li element로 바뀔 수도 있으니 "항상 고정 selector"로 잡는다
+    this.dom.tabs = this.shadow.querySelectorAll(this.staticSelectors.tabs);
+  }
+
+  createTabs() {
+    if (!this.dom.indicator) return;
+
+    const categoriesCount = this.externalRefs.categories?.length ?? 0;
+
+    this.dom.indicator.innerHTML = "";
+
+    for (let i = 0; i <= categoriesCount; i++) {
+      this.dom.indicator.innerHTML += `<li tab-index=${i} ${i === 0 ? "active" : ""}></li>`;
+    }
+
+    // ✅ li가 추가됐으니 다시 고정 selector로 재캐싱
+    this.dom.tabs = this.shadow.querySelectorAll(this.staticSelectors.tabs);
+  }
+
   setEvents() {
-    // 탭 클릭 -> 탭 변경
-    this.refs.tabs.forEach((tab) => (tab.onclick = ({ target }) => this.handleTabChange(target)));
+    // 탭 클릭
+    if (this.dom.tabs && this.dom.tabs.length > 0) {
+      this.dom.tabs.forEach((tab) => {
+        tab.onclick = ({ target }) => this.handleTabChange(target);
+      });
+    }
 
-    // ✅ 휠로 탭 전환 제거: document.onwheel 등록 안 함
-    // document.onwheel = (e) => this.handleWheelScroll(e);
-
-    // 키보드 숫자키로 탭 전환은 유지
     document.onkeydown = (e) => this.handleKeyPress(e);
 
-    this.refs.fastlink.onclick = () => {
-      if (CONFIG.config.fastlink) {
-        window.location.href = CONFIG.config.fastlink;
-      }
-    };
+    this.dom.fastlink?.addEventListener("click", () => {
+      if (CONFIG.config.fastlink) window.location.href = CONFIG.config.fastlink;
+    });
 
-    // Store current tab index before page unload
     if (CONFIG.openLastVisitedTab) {
       window.onbeforeunload = () => this.saveCurrentTab();
     }
@@ -298,86 +235,56 @@ class Statusbar extends Component {
     });
   }
 
-  /**
-   * Saves the currently active tab index to localStorage
-   */
   saveCurrentTab() {
     localStorage.lastVisitedTab = this.currentTabIndex;
   }
 
-  /**
-   * Opens the last visited tab from localStorage
-   */
   openLastVisitedTab() {
     if (!CONFIG.openLastVisitedTab) return;
     this.activateByKey(Number(localStorage.lastVisitedTab ?? 0));
   }
 
-  /**
-   * Handles tab change events
-   * @param {Element} tab - The clicked tab element
-   */
   handleTabChange(tab) {
-    this.activateByKey(Number(tab.getAttribute("tab-index")));
+    const li = tab?.closest?.("li") ?? tab;
+    this.activateByKey(Number(li.getAttribute("tab-index")));
   }
 
-  /**
-   * Handles keyboard shortcuts for tab navigation
-   * @param {KeyboardEvent} event - The keyboard event object
-   */
   handleKeyPress(event) {
     if (!event) return;
+    const { target, key } = event;
 
-    let { target, key } = event;
-
-    // 입력 중(검색창 등)에는 탭 전환 금지
     if (document.activeElement !== document.body) return;
     if (target.shadow && target.shadow.activeElement) return;
 
-    // Activate tab by number key (1-5)
     if (Number.isInteger(parseInt(key)) && key <= this.externalRefs.categories.length) {
       this.activateByKey(key - 1);
     }
   }
 
-  /**
-   * Activates a tab by its index
-   * @param {number} key - The tab index to activate
-   */
   activateByKey(key) {
     if (key < 0) return;
+    if (!this.dom.tabs || this.dom.tabs.length === 0) return;
+    if (key >= this.dom.tabs.length) return;
+
     this.currentTabIndex = key;
 
-    this.activate(this.refs.tabs, this.refs.tabs[key]);
-    this.activate(this.externalRefs.categories, this.externalRefs.categories[key]);
-  }
+    this.activate(this.dom.tabs, this.dom.tabs[key]);
 
-  /**
-   * Creates tab elements based on categories count
-   */
-  createTabs() {
-    const categoriesCount = this.externalRefs.categories.length;
-
-    for (let i = 0; i <= categoriesCount; i++) {
-      this.refs.indicator.innerHTML += `<li tab-index=${i} ${i == 0 ? "active" : ""}></li>`;
+    if (this.externalRefs.categories && this.externalRefs.categories.length > key) {
+      this.activate(this.externalRefs.categories, this.externalRefs.categories[key]);
     }
   }
 
-  /**
-   * Activates a specific item by setting active attribute
-   * @param {NodeList} target - Collection of elements to process
-   * @param {Element} item - The specific item to activate
-   */
   activate(target, item) {
+    if (!target || typeof target.forEach !== "function") return;
+    if (!item) return;
     target.forEach((i) => i.removeAttribute("active"));
     item.setAttribute("active", "");
   }
 
-  /**
-   * Component lifecycle callback when element is connected to DOM
-   */
   connectedCallback() {
     this.render().then(() => {
+      this.cacheDom();
       this.createTabs();
       this.setEvents();
       this.openLastVisitedTab();
