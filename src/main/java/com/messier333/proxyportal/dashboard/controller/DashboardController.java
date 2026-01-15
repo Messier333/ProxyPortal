@@ -15,6 +15,8 @@ import com.messier333.proxyportal.proxygetter.service.ProxyGetterService;
 
 import lombok.RequiredArgsConstructor;
 
+import java.util.Objects;
+
 
 @Controller
 @RequiredArgsConstructor
@@ -35,7 +37,7 @@ public class DashboardController {
         if(isAdmin){
             model.addAttribute("npmLinks", proxyGetterService.getProxyHostsList());
         }
-        model.addAttribute("tabs", portalService.getPortalTabs(auth.getName()).tabs());
+        model.addAttribute("tabs", portalService.getPortalTabs(Objects.requireNonNull(auth).getName()).tabs());
         return "dashboard/manage";
     }
 
