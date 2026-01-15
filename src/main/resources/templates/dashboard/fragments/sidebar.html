@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" th:fragment="sidebar(active)">
+<body>
+  <aside class="sb" id="sidebar" aria-label="Sidebar">
+    <div class="sb__brand">
+      <div class="sb__logo">🧭</div>
+      <div class="sb__title">
+        <div class="sb__name">ProxyPortal</div>
+        <div class="sb__sub">Catppuccin Mocha</div>
+      </div>
+    </div>
+
+    <nav class="sb__nav">
+      <a class="sb__link"
+         th:classappend="${active}=='home' ? ' is-active' : ''"
+         th:href="@{/dashboard}">
+        <span class="sb__icon">🏠</span>
+        <span>메인</span>
+      </a>
+
+      <a class="sb__link"
+         th:classappend="${active}=='manage' ? ' is-active' : ''"
+         th:href="@{/dashboard/manage}">
+        <span class="sb__icon">➕</span>
+        <span>등록/관리</span>
+      </a>
+
+      <a class="sb__link"
+         th:classappend="${active}=='account' ? ' is-active' : ''"
+         th:href="@{/dashboard/account/add}">
+        <span class="sb__icon">👤</span>
+        <span>계정 추가</span>
+      </a>
+
+        <a class="sb__link"
+         th:classappend="${active}=='account' ? ' is-active' : ''"
+         th:href="@{/}">
+        <span class="sb__icon">☰</span>
+        <span>포탈</span>
+      </a>
+    </nav>
+
+    <div class="sb__footer">
+      <div class="chip">
+        <span class="dot"></span>
+        <span th:text="${#dates.format(#dates.createNow(),'yyyy-MM-dd HH:mm')}">now</span>
+      </div>
+    </div>
+  </aside>
+</body>
+</html>

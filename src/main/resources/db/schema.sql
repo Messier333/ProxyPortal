@@ -15,7 +15,6 @@ CREATE TABLE IF NOT EXISTS portal_tabs (
                                            id BIGINT PRIMARY KEY,
                                            user_id BIGINT NOT NULL,
                                            name VARCHAR(255) NOT NULL,
-    background_url VARCHAR(512),
     sort_order INTEGER NOT NULL,
 
     CONSTRAINT fk_portal_tabs_user

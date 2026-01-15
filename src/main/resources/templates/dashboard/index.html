@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+  <th:block th:replace="dashboard/fragments/head :: head('Dashboard • 메인')"></th:block>
+
+  <body class="app">
+    <th:block th:replace="dashboard/fragments/sidebar :: sidebar('home')"></th:block>
+
+    <main class="main" id="main">
+      <th:block th:replace="dashboard/fragments/topbar :: topbar('메인')"></th:block>
+      <th:block th:replace="dashboard/fragments/toast :: toast"></th:block>
+
+      <section class="grid">
+        <article class="card">
+          <div class="card__head">
+            <h2>등록된 탭</h2>
+            <a class="link" th:href="@{/dashboard/manage}">등록/관리로</a>
+          </div>
+
+          <div class="list">
+            <div class="empty" th:if="${tabs == null or #lists.isEmpty(tabs)}">등록된 탭이 없습니다.</div>
+            <div class="item" th:each="t : ${tabs}">
+              <div class="item__title" th:text="${t.name}">Tab</div>
+              <div class="item__meta">#<span th:text="${t.id}">1</span></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="card">
+          <div class="card__head">
+            <h2>등록된 카테고리</h2>
+            <a class="link" th:href="@{/dashboard/manage}">등록/관리로</a>
+          </div>
+
+          <div class="list">
+            <div class="empty" th:if="${categories == null or #lists.isEmpty(categories)}">등록된 카테고리가 없습니다.</div>
+            <div class="item" th:each="c : ${categories}">
+              <div class="item__title" th:text="${c.name}">Category</div>
+              <div class="item__meta">
+                탭: <span th:text="${c.tabName}">Home</span>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article class="card card--full">
+          <div class="card__head">
+            <h2>등록된 링크</h2>
+            <a class="link" th:href="@{/dashboard/manage}">등록/관리로</a>
+          </div>
+
+          <div class="table">
+            <div class="empty" th:if="${links == null or #lists.isEmpty(links)}">등록된 링크가 없습니다.</div>
+
+            <div class="row row--head" th:if="${links != null and !#lists.isEmpty(links)}">
+              <div>이름</div>
+              <div>URL</div>
+              <div>탭</div>
+              <div>카테고리</div>
+            </div>
+
+            <div class="row" th:each="l : ${links}">
+              <div class="mono" th:text="${l.name}">Name</div>
+              <div>
+                <a class="url" th:href="${l.url}" th:text="${l.url}" target="_blank" rel="noreferrer">https://</a>
+              </div>
+              <div th:text="${l.tabName}">Tab</div>
+              <div th:text="${l.categoryName}">Category</div>
+            </div>
+          </div>
+        </article>
+      </section>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+  <th:block th:replace="dashboard/fragments/head :: head('Dashboard • 계정 추가')"></th:block>
+
+  <body class="app">
+    <th:block th:replace="dashboard/fragments/sidebar :: sidebar('account')"></th:block>
+
+    <main class="main" id="main">
+      <th:block th:replace="dashboard/fragments/topbar :: topbar('계정 추가')"></th:block>
+      <th:block th:replace="dashboard/fragments/toast :: toast"></th:block>
+
+      <section class="grid">
+        <article class="card card--full">
+          <div class="card__head">
+            <h2>NPM 계정 등록</h2>
+            <div class="hint">예: Nginx Proxy Manager API 로그인 정보</div>
+          </div>
+
+          <form class="form" th:action="@{/dashboard/account}" method="post">
+            <label class="field">
+              <span class="field__label">별칭(표시 이름)</span>
+              <input class="input" name="alias" placeholder="예: my-npm" required/>
+            </label>
+
+            <label class="field">
+              <span class="field__label">NPM URL</span>
+              <input class="input mono" name="baseUrl" placeholder="http://192.168.1.10:81" required/>
+            </label>
+
+            <div class="row2">
+              <label class="field">
+                <span class="field__label">이메일</span>
+                <input class="input" name="email" placeholder="admin@example.com" required/>
+              </label>
+
+              <label class="field">
+                <span class="field__label">비밀번호</span>
+                <input class="input" type="password" name="password" placeholder="••••••••" required/>
+              </label>
+            </div>
+
+            <button class="btn" type="submit">계정 저장</button>
+          </form>
+        </article>
+      </section>
+    </main>
+  </body>
+</html>

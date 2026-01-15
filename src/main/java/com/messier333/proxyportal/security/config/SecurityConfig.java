@@ -1,22 +1,28 @@
 package com.messier333.proxyportal.security.config;
 
+import com.messier333.proxyportal.user.service.CustomUserDetailService;
+
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
+@RequiredArgsConstructor
 public class SecurityConfig {
+
+    private final CustomUserDetailService customUserDetailService;
+
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
+                .userDetailsService(customUserDetailService)
                 .authorizeHttpRequests(auth -> auth
                                 .requestMatchers("/login", "/error").permitAll()
                                 .requestMatchers("/admin/**", "/api/admin/**").hasRole("ADMIN")
@@ -37,20 +43,6 @@ public class SecurityConfig {
                         .ignoringRequestMatchers("/h2-console/**")
                 );
         return http.build();
-    }
-
-    @Bean
-    public UserDetailsService users(PasswordEncoder encoder) {
-        return new InMemoryUserDetailsManager(
-            User.withUsername("user")
-                .password(encoder.encode("password"))
-                .roles("USER")
-                .build(),
-            User.withUsername("admin")
-                .password(encoder.encode("adminpassword"))
-                .roles("ADMIN")
-                .build()
-        );
     }
 
     @Bean

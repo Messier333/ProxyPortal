@@ -8,14 +8,14 @@ MERGE INTO users (id, username, password, role)
 -- =====================
 -- TABS
 -- =====================
-MERGE INTO portal_tabs (id, user_id, name, background_url, sort_order) KEY(id)
-    VALUES (1, 1, 'myself', 'src/img/banners/banner_09.gif', 1);
+MERGE INTO portal_tabs (id, user_id, name, sort_order) KEY(id)
+    VALUES (1, 1, 'myself',  1);
 
-MERGE INTO portal_tabs (id, user_id, name, background_url, sort_order) KEY(id)
-    VALUES (2, 1, 'dev', 'src/img/banners/banner_07.gif', 2);
+MERGE INTO portal_tabs (id, user_id, name,sort_order) KEY(id)
+    VALUES (2, 1, 'dev',  2);
 
-MERGE INTO portal_tabs (id, user_id, name, background_url, sort_order) KEY(id)
-    VALUES (3, 1, 'chi ll', 'src/img/banners/banner_08.gif', 3);
+MERGE INTO portal_tabs (id, user_id, name, sort_order) KEY(id)
+    VALUES (3, 1, 'chi ll', 3);
 
 -- =====================
 -- CATEGORIES
