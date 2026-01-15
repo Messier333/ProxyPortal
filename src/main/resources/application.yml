@@ -10,9 +10,9 @@ spring:
     password:
 
 npm:
-  base-url: ${NPM_BASE_URL}
-  identity: ${NPM_IDENTITY}
-  secret: ${NPM_SECRET}
+  base-url: ${NPM_BASE_URL:http://localhost:81}
+  identity: ${NPM_IDENTITY:admin}
+  secret: ${NPM_SECRET:changeme}
 
 logging:
   level:
