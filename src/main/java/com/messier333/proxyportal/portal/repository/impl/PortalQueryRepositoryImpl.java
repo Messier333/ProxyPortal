@@ -107,7 +107,7 @@ public class PortalQueryRepositoryImpl implements PortalQueryRepository {
         }
 
         CategoryResponse build() {
-            return new CategoryResponse(id, name, links, sort);
+            return new CategoryResponse(id, name, sort, links);
         }
     }
 }

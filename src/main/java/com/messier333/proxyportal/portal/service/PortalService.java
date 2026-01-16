@@ -72,8 +72,8 @@ public class PortalService {
         return new CategoryResponse(
                 saved.getId(),
                 saved.getName(),
-                List.of(),
-                saved.getSortOrder()
+                saved.getSortOrder(),
+                List.of()
         );
     }
 
@@ -99,6 +99,22 @@ public class PortalService {
                 saved.getIcon(),
                 saved.getIconColor(),
                 saved.getSortOrder()
+        );
+    }
+
+    @Transactional
+    public CategoryResponse addCategorytoTab(String username, Long tabId, Long categoryId){
+        PortalCategory portalCategory = portalCategoryRepository.findByIdAndTabUserUsername(categoryId,username).orElseThrow(
+                () -> new IllegalArgumentException("category not found or user not matched")
+        );
+        portalCategory.setCategoryTab(portalTabRepository.findById(tabId).orElseThrow(
+                () -> new IllegalArgumentException("tab not found or user not matched")
+        ));
+        return new CategoryResponse(
+                portalCategory.getId(),
+                portalCategory.getName(),
+                portalCategory.getSortOrder(),
+                List.of()
         );
     }
 }

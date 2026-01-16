@@ -17,7 +17,7 @@
             <h2>탭 등록</h2>
           </div>
 
-          <form class="form" th:action="@{/dashboard/tabs}" method="post">
+          <form class="form" th:action="@{/dashboard/manage/tabs}" method="post">
             <label class="field">
               <span class="field__label">탭 이름</span>
               <input class="input" name="name" placeholder="예: Home" required/>
@@ -32,7 +32,7 @@
             <h2>카테고리 등록</h2>
           </div>
 
-          <form class="form" th:action="@{/dashboard/categories}" method="post">
+          <form class="form" th:action="@{/dashboard/manage/categories}" method="post">
             <label class="field">
               <span class="field__label">탭 선택</span>
               <select class="select" name="tabId" required>
