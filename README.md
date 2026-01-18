@@ -36,13 +36,13 @@ ProxyPortal은 이런 문제를 해결하기 위해 만들어졌습니다.
 ## 아키텍처 개요
 
 브라우저 <br>
-↓
+↓ <br>
 Spring MVC Controller <br>
-↓
+↓ <br>
 Service / DB / 외부 API <br>
-↓
+↓ <br>
 portal-config(JSON) 주입 <br>
-↓
+↓ <br>
 클라이언트에서 동적 UI 생성 <br>
 
 ---
