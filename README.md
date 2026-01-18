@@ -8,7 +8,7 @@
 
 ---
 
-## ✨ 프로젝트 동기
+## 프로젝트 동기
 
 Nginx Proxy Manager 등으로 여러 서비스를 셀프 호스팅하면서  
 서비스 URL이 늘어나고 관리가 어려워지는 문제가 있었습니다.
@@ -22,7 +22,7 @@ ProxyPortal은 이런 문제를 해결하기 위해 만들어졌습니다.
 
 ---
 
-## 🧩 주요 기능
+## 주요 기능
 
 - 탭 / 카테고리 / 링크 등록 및 관리
 - 서버에서 관리되는 포털 설정 데이터
@@ -33,7 +33,7 @@ ProxyPortal은 이런 문제를 해결하기 위해 만들어졌습니다.
 
 ---
 
-## 🏗 아키텍처 개요
+## 아키텍처 개요
 
 브라우저
 ↓
@@ -49,7 +49,7 @@ portal-config(JSON) 주입
 
 
 
-## 🖥 프론트엔드 구성
+## 프론트엔드 구성
 
 - Spring MVC + Thymeleaf 기반 서버사이드 렌더링
 - Vanilla JavaScript를 사용한 동적 UI 구성
@@ -60,7 +60,7 @@ portal-config(JSON) 주입
 
 ---
 
-## ⚙ 백엔드 구성
+## 백엔드 구성
 
 - Java 17
 - Spring Boot
@@ -71,7 +71,7 @@ portal-config(JSON) 주입
 
 ---
 
-## 🗄 도메인 구조 (개념)
+## 도메인 구조 (개념)
 
 - **Tab**
   - 이름
@@ -91,7 +91,7 @@ portal-config(JSON) 주입
 
 ---
 
-## 🚀 실행 방법
+## 실행 방법
 
 ```bash
 git clone https://github.com/your-id/proxyportal.git
