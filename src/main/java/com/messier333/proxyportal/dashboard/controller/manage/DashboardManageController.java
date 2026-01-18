@@ -2,7 +2,6 @@ package com.messier333.proxyportal.dashboard.controller.manage;
 
 import java.util.Objects;
 
-import com.messier333.proxyportal.portal.dto.response.CategoryResponse;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.User;
@@ -15,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.messier333.proxyportal.portal.dto.request.CategoryCreateRequest;
 import com.messier333.proxyportal.portal.dto.request.TabCreateRequest;
+import com.messier333.proxyportal.portal.dto.response.CategoryResponse;
 import com.messier333.proxyportal.portal.service.PortalService;
 import com.messier333.proxyportal.proxygetter.service.ProxyGetterService;
 
@@ -37,6 +37,7 @@ public class DashboardManageController {
             model.addAttribute("npmLinks", proxyGetterService.getProxyHostsList());
         }
         model.addAttribute("tabs", portalService.getPortalTabs(Objects.requireNonNull(auth).getName()).tabs());
+        model.addAttribute("categories");
         return "dashboard/manage";
     }
 

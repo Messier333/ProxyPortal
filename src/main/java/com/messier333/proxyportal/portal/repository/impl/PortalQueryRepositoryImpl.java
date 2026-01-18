@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 
 import com.messier333.proxyportal.portal.dto.response.CategoryResponse;
 import com.messier333.proxyportal.portal.dto.response.LinkResponse;
+import com.messier333.proxyportal.portal.dto.response.PortalCategoriesResponse;
 import com.messier333.proxyportal.portal.dto.response.PortalTabsResponse;
 import com.messier333.proxyportal.portal.dto.response.TabResponse;
 import com.messier333.proxyportal.portal.entity.PortalRow;
@@ -109,5 +110,10 @@ public class PortalQueryRepositoryImpl implements PortalQueryRepository {
         CategoryResponse build() {
             return new CategoryResponse(id, name, sort, links);
         }
+    }
+    @Override
+    public PortalCategoriesResponse findCategoriesByUsername(String username) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'findCategoriesByUsername'");
     }
 }

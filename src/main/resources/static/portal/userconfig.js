@@ -7,7 +7,6 @@ const preferredDarkTheme = mocha;
 
 let palette = initThemeSystem(preferredLightTheme, preferredDarkTheme);
 
-// ✅ 서버 주입 JSON 읽기
 const rawJson = document.getElementById("portal-config")?.textContent || "{}";
 let injected = {};
 try {
@@ -17,10 +16,8 @@ try {
   injected = {};
 }
 
-// ✅ tabs만 서버값 사용 (없으면 빈 배열)
 const injectedTabs = Array.isArray(injected.tabs) ? injected.tabs : [];
 
-// (선택) links 정렬(sort_order) 보장 + 필드 유지
 function normalizeTabs(tabs) {
   return tabs.map((t) => ({
     name: t.name,
@@ -76,7 +73,6 @@ const default_configuration = {
   fastlink: "https://www.perplexity.ai",
   openLastVisitedTab: true,
 
-  // ✅ 여기만 서버 주입값으로 교체
   tabs: normalizeTabs(injectedTabs),
 };
 

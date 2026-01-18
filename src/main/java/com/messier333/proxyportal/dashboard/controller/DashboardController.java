@@ -5,15 +5,12 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import com.messier333.proxyportal.portal.service.PortalService;
-
 import lombok.RequiredArgsConstructor;
 
 
 @Controller
 @RequiredArgsConstructor
 public class DashboardController {
-    private final PortalService portalService;
 
     @GetMapping("/dashboard")
     public String dashboardView(){

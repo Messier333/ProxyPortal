@@ -37,6 +37,10 @@ public class PortalService {
         return portalQueryRepository.findTabsByUsername(username);
     }
 
+    public void getCategories(){
+    }
+
+
     @Transactional
     public TabResponse createTab(String username, TabCreateRequest tabCreateRequest){
         PortalTab portalTab = PortalTab.createTab(
