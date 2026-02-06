@@ -53,6 +53,5 @@ public class DashboardManageController {
         CategoryResponse categoryResponse = portalService.createCategory(user.getUsername(), tabId, new CategoryCreateRequest(name, null, 1));
         portalService.addCategorytoTab(user.getUsername(), tabId, categoryResponse.id());
         return "redirect:/dashboard/manage";
-    }
-    
+    }    
 }
