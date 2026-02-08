@@ -1,10 +1,10 @@
 package com.messier333.proxyportal.portal.repository;
 
+import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.messier333.proxyportal.portal.entity.PortalCategory;
-
-import java.util.Optional;
 
 public interface PortalCategoryRepository extends JpaRepository<PortalCategory, Long> {
 

@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 
 import com.messier333.proxyportal.portal.dto.response.CategoryResponse;
 import com.messier333.proxyportal.portal.dto.response.LinkResponse;
+import com.messier333.proxyportal.portal.dto.response.PortalCategoriesResponse;
 import com.messier333.proxyportal.portal.dto.response.PortalTabsResponse;
 import com.messier333.proxyportal.portal.dto.response.TabResponse;
 import com.messier333.proxyportal.portal.entity.PortalRow;
@@ -35,7 +36,7 @@ public class PortalQueryRepositoryImpl implements PortalQueryRepository {
         List<PortalRow> rows = queryFactory
             .select(Projections.constructor(
                     PortalRow.class,
-                    tab.id, tab.name, tab.sortOrder,
+                    tab.id, tab.name, tab.backgroundUrl, tab.sortOrder,
                     category.id, category.name, category.sortOrder,
                     link.id, link.name, link.url, link.icon, link.iconColor, link.sortOrder
                     ))
@@ -52,7 +53,7 @@ public class PortalQueryRepositoryImpl implements PortalQueryRepository {
         Map<Long, TabBuilder> tabMap = new LinkedHashMap<>();
         for (PortalRow r : rows) {
             TabBuilder tb = tabMap.computeIfAbsent(r.tabId(), id ->
-                new TabBuilder(id, r.tabName(), r.tabSort())
+                new TabBuilder(id, r.tabName(), r.tabBackgroundUrl(), r.tabSort())
             );
             if (r.categoryId() != null) {
                 CategoryBuilder cb = tb.categoryMap.computeIfAbsent(r.categoryId(), cid ->
@@ -79,11 +80,13 @@ public class PortalQueryRepositoryImpl implements PortalQueryRepository {
     private static class TabBuilder {
         final Long id;
         final String name;
+        final String backgroundUrl;
         final Integer sort;
         final Map<Long, CategoryBuilder> categoryMap = new LinkedHashMap<>();
-        TabBuilder(Long id, String name, Integer sort) {
+        TabBuilder(Long id, String name, String backgroundUrl, Integer sort) {
             this.id = id;
             this.name = name;
+            this.backgroundUrl = backgroundUrl;
             this.sort = sort;
         }
 
@@ -91,7 +94,7 @@ public class PortalQueryRepositoryImpl implements PortalQueryRepository {
             List<CategoryResponse> categories = categoryMap.values().stream()
                     .map(CategoryBuilder::build)
                     .toList();
-            return new TabResponse(id, name, sort, categories);
+            return new TabResponse(id, name, sort, backgroundUrl, categories);
         }
     }
     private static class CategoryBuilder {
@@ -107,7 +110,18 @@ public class PortalQueryRepositoryImpl implements PortalQueryRepository {
         }
 
         CategoryResponse build() {
-            return new CategoryResponse(id, name, links, sort);
+            return new CategoryResponse(id, name, sort, links);
         }
+    }
+    @Override
+    public PortalCategoriesResponse findCategoriesByUsername(String username) {
+        final Long id;
+        final String name;
+        final Integer sort;
+        final List<CategoryResponse> categories = new ArrayList<>();
+
+        
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'findCategoriesByUsername'");
     }
 }

@@ -7,7 +7,6 @@ const preferredDarkTheme = mocha;
 
 let palette = initThemeSystem(preferredLightTheme, preferredDarkTheme);
 
-// ✅ 서버 주입 JSON 읽기
 const rawJson = document.getElementById("portal-config")?.textContent || "{}";
 let injected = {};
 try {
@@ -17,10 +16,8 @@ try {
   injected = {};
 }
 
-// ✅ tabs만 서버값 사용 (없으면 빈 배열)
 const injectedTabs = Array.isArray(injected.tabs) ? injected.tabs : [];
 
-// (선택) links 정렬(sort_order) 보장 + 필드 유지
 function normalizeTabs(tabs) {
   return tabs.map((t) => ({
     name: t.name,
@@ -44,28 +41,20 @@ function normalizeTabs(tabs) {
 const default_configuration = {
   overrideStorage: true,
   temperature: {
-    location: "London",
+    location: "Seoul",
     scale: "C",
   },
   clock: {
     format: "k:i p",
     icon_color: palette.maroon,
   },
-  additionalClocks: [
-    {
-      label: "UA",
-      timezone: "Europe/Kyiv",
-      format: "h:i",
-      icon_color: palette.peach,
-    },
-  ],
+  additionalClocks: [],
   search: {
     engines: {
       p: ["https://www.perplexity.ai/search/?q=", "PerplexityAI"],
-      d: ["https://duckduckgo.com/?q=", "DuckDuckGo"],
       g: ["https://google.com/search?q=", "Google"],
     },
-    default: "d",
+    default: "g",
   },
   keybindings: {
     s: "search-bar",
@@ -76,11 +65,58 @@ const default_configuration = {
   fastlink: "https://www.perplexity.ai",
   openLastVisitedTab: true,
 
-  // ✅ 여기만 서버 주입값으로 교체
   tabs: normalizeTabs(injectedTabs),
 };
 
 const CONFIG = new Config(default_configuration, palette);
+
+function normalizeDetectedCity(rawCity) {
+  if (!rawCity) return "";
+
+  let city = String(rawCity).trim().toLowerCase();
+  city = city.replace(/-(gun|si|gu|do|eup|myeon|dong)$/i, "");
+  city = city.replace(/-/g, " ").replace(/\s+/g, " ").trim();
+
+  // Title-case for cleaner display/query (e.g. "hongseong" -> "Hongseong")
+  city = city
+    .split(" ")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+
+  return city;
+}
+
+async function applyIpBasedWeatherLocation() {
+  try {
+    const response = await fetch("https://ipapi.co/json/");
+    if (!response.ok) return;
+
+    const data = await response.json();
+    const detectedCity = normalizeDetectedCity(data?.city || "");
+    if (!detectedCity) return;
+    if (detectedCity === CONFIG.temperature.location) return;
+
+    CONFIG.temperature = {
+      ...CONFIG.temperature,
+      location: detectedCity,
+    };
+
+    if (typeof RenderedComponents === "undefined") return;
+    const weather = RenderedComponents["weather-forecast"];
+    if (!weather || typeof weather.setDependencies !== "function") return;
+
+    weather.setDependencies();
+    const locationEl = weather.shadow?.querySelector(".weather-temperature-location");
+    if (locationEl) locationEl.textContent = weather.location;
+    if (typeof weather.setWeather === "function") {
+      await weather.setWeather();
+    }
+  } catch (e) {
+    console.warn("IP-based weather location lookup failed, using default city.", e);
+  }
+}
+
+applyIpBasedWeatherLocation();
 
 const root = document.querySelector(":root");
 root.style.setProperty("--bg", palette.mantle);

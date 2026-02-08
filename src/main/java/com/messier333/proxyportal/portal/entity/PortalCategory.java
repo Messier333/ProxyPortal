@@ -57,4 +57,8 @@ public class PortalCategory {
         this.name = name;
         this.sortOrder = sortOrder;
     }
+
+    public void setCategoryTab(PortalTab tab) {
+        this.tab = tab;
+    }
 }

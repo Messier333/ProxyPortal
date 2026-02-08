@@ -47,12 +47,29 @@ const Dashboard = (() => {
     toast("링크 폼 초기화");
   }
 
+  function bindFilePickers() {
+    const fileInputs = document.querySelectorAll(".filepick__input");
+
+    fileInputs.forEach((input) => {
+      input.addEventListener("change", () => {
+        const wrap = input.closest(".filepick");
+        const nameEl = wrap?.querySelector(".filepick__name");
+        if (!nameEl) return;
+
+        const emptyLabel = nameEl.dataset.emptyLabel || "선택된 파일 없음";
+        const fileName = input.files && input.files.length > 0 ? input.files[0].name : emptyLabel;
+        nameEl.textContent = fileName;
+      });
+    });
+  }
+
   function bind() {
     const ham = qs("#hamburger");
     if (ham) ham.addEventListener("click", toggleSidebar);
 
     const clearBtn = qs("#clearLinkForm");
     if (clearBtn) clearBtn.addEventListener("click", clearLinkForm);
+    bindFilePickers();
 
     // 바깥 클릭 시 모바일 사이드바 닫기
     document.addEventListener("click", (e) => {

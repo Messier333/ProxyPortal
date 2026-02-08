@@ -199,8 +199,64 @@ a{color:inherit; text-decoration:none}
   outline:none;
 }
 .input:focus,.select:focus{border-color: rgba(137,180,250,.35)}
+.input--sm{
+  padding: 8px 10px;
+  border-radius: 10px;
+  min-width: 150px;
+}
 .row2{display:grid; grid-template-columns: 1fr 1fr; gap: 12px}
 .actions{display:flex; gap:10px; align-items:center}
+
+.filepick{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(205,214,244,.12);
+  background: rgba(49,50,68,.35);
+}
+.filepick__input{
+  position:absolute;
+  width:1px;
+  height:1px;
+  overflow:hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space:nowrap;
+  border:0;
+  padding:0;
+  margin:-1px;
+}
+.filepick__btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(137,180,250,.35);
+  background: rgba(137,180,250,.18);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.filepick__btn:hover{border-color: rgba(137,180,250,.55)}
+.filepick__name{
+  font-size:12px;
+  color: var(--subtext1);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.filepick--compact{
+  padding: 6px 8px;
+  gap:8px;
+}
+.filepick--compact .filepick__btn{
+  padding: 6px 10px;
+}
 
 /* Buttons */
 .btn{
@@ -231,6 +287,81 @@ a{color:inherit; text-decoration:none}
 .mini__head{font-size:12px; color: var(--subtext0); margin-bottom:10px}
 .mini__body{display:flex; flex-direction:column; gap:10px}
 .chip--list{justify-content:space-between}
+.chip--tab{
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+  gap:10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+}
+.tab-row-top{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  flex-wrap: nowrap;
+}
+.tab-name{font-weight:800}
+.tab-rename-form{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap: nowrap;
+  min-width: 0;
+  flex: 1;
+}
+.tab-rename-form .btn{
+  white-space: nowrap;
+}
+.tab-row-top .tab-status{
+  flex-shrink: 0;
+}
+.tab-status{
+  font-size:11px;
+  border-radius:999px;
+  padding: 4px 8px;
+  border: 1px solid rgba(205,214,244,.14);
+  background: rgba(49,50,68,.30);
+  color: var(--subtext1);
+}
+.tab-status.is-on{
+  border-color: rgba(166,227,161,.35);
+  background: rgba(166,227,161,.14);
+  color: var(--green);
+}
+.tab-status.is-off{
+  border-color: rgba(205,214,244,.16);
+  background: rgba(49,50,68,.22);
+  color: var(--subtext0);
+}
+.tab-row-actions{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.tab-upload-form{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.tab-icon-form{
+  display:inline-flex;
+}
+.tab-delete-form{
+  display:inline-flex;
+  margin-left: auto;
+}
+.tab-delete-form .btn{
+  min-width: 78px;
+}
+.filepick--compact{
+  border-radius: 10px;
+}
+.filepick--compact .filepick__btn{
+  border-radius: 9px;
+}
 .x{
   width:28px;height:28px;border-radius:10px;
   border: 1px solid rgba(205,214,244,.12);

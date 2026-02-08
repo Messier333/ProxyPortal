@@ -38,7 +38,7 @@ bin/
 out/
 *.log
 logs/
-
+uploads/
 
 *.mv.db
 *.trace.db
@@ -63,3 +63,6 @@ docker-compose.override.yml
 
 coverage/
 .tmp/
+.settings/
+.classpath
+.project

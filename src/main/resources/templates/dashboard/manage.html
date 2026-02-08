@@ -17,10 +17,19 @@
             <h2>탭 등록</h2>
           </div>
 
-          <form class="form" th:action="@{/dashboard/tabs}" method="post">
+          <form class="form" th:action="@{/dashboard/manage/tabs}" method="post" enctype="multipart/form-data">
             <label class="field">
               <span class="field__label">탭 이름</span>
               <input class="input" name="name" placeholder="예: Home" required/>
+            </label>
+
+            <label class="field">
+              <span class="field__label">탭 배경 이미지 (선택)</span>
+              <div class="filepick">
+                <input class="filepick__input" id="tabBackgroundImage" type="file" name="backgroundImage" accept="image/*"/>
+                <label class="filepick__btn" for="tabBackgroundImage">파일 선택</label>
+                <span class="filepick__name" data-empty-label="선택된 파일 없음">선택된 파일 없음</span>
+              </div>
             </label>
 
             <button class="btn" type="submit">탭 추가</button>
@@ -32,7 +41,7 @@
             <h2>카테고리 등록</h2>
           </div>
 
-          <form class="form" th:action="@{/dashboard/categories}" method="post">
+          <form class="form" th:action="@{/dashboard/manage/categories}" method="post">
             <label class="field">
               <span class="field__label">탭 선택</span>
               <select class="select" name="tabId" required>
@@ -134,11 +143,42 @@
               <div class="mini__head">탭</div>
               <div class="mini__body">
                 <div class="empty" th:if="${tabs == null or #lists.isEmpty(tabs)}">없음</div>
-                <div class="chip chip--list" th:each="t : ${tabs}">
-                  <span th:text="${t.name}">Home</span>
-                  <form th:action="@{|/dashboard/tabs/${t.id}/delete|}" method="post">
-                    <button class="x" type="submit" aria-label="탭 삭제">×</button>
+                <div class="chip chip--tab" th:each="t : ${tabs}"
+                     th:with="hasBg=${t.backgroundUrl != null and !#strings.isEmpty(t.backgroundUrl)},
+                              bgName=${hasBg ? t.backgroundUrl.substring(t.backgroundUrl.lastIndexOf('/') + 1) : '이미지 없음'}">
+                  <div class="tab-row-top">
+                    <form class="tab-rename-form" th:action="@{|/dashboard/manage/tabs/${t.id}/rename|}" method="post">
+                      <input class="input input--sm" type="text" name="name" th:value="${t.name}" required/>
+                      <button class="btn btn--small btn--ghost" type="submit">이름 변경</button>
+                    </form>
+                    <span class="tab-status"
+                          th:classappend="${hasBg} ? ' is-on' : ' is-off'"
+                          th:text="${hasBg ? bgName : '이미지 없음'}">
+                      적용 파일명
+                    </span>
+                  </div>
+                  <div class="tab-row-actions">
+                  <form class="tab-upload-form" th:action="@{|/dashboard/manage/tabs/${t.id}/background|}" method="post" enctype="multipart/form-data">
+                    <div class="filepick filepick--compact">
+                      <input class="filepick__input" th:id="|tabBg-${t.id}|" type="file" name="backgroundImage" accept="image/*" required/>
+                      <label class="filepick__btn" th:for="|tabBg-${t.id}|">파일 선택</label>
+                      <span class="filepick__name"
+                            th:attr="data-empty-label=${bgName}"
+                            th:text="${bgName}">
+                        이미지 없음
+                      </span>
+                    </div>
+                    <button class="btn btn--small" type="submit">적용</button>
                   </form>
+                  <form th:if="${hasBg}"
+                        class="tab-icon-form"
+                        th:action="@{|/dashboard/manage/tabs/${t.id}/background/remove|}" method="post">
+                    <button class="btn btn--small btn--ghost" type="submit" aria-label="탭 배경 제거" title="배경 이미지 끄기">배경 해제</button>
+                  </form>
+                  <form class="tab-delete-form" th:action="@{|/dashboard/tabs/${t.id}/delete|}" method="post">
+                    <button class="btn btn--small btn--danger" type="submit" aria-label="탭 삭제">탭 삭제</button>
+                  </form>
+                  </div>
                 </div>
               </div>
             </div>

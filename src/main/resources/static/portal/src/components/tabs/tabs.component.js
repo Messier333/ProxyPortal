@@ -47,8 +47,11 @@ class Category extends Component {
   constructor() { super(); }
 
   static getBackgroundStyle(url) {
-    if (!url) return "";
-    return `style="background-image: url(${url}); background-repeat: no-repeat; background-size: contain;"`;
+    if (!url) {
+      return `style="background-image: none;"`;
+    }
+
+    return `style="background-image: url('${url}'); background-repeat: no-repeat; background-size: cover; background-position: center;"`;
   }
 
   static getAll(tabs) {
@@ -135,7 +138,7 @@ class Tabs extends Component {
         width: 100%;
         height: 100%;
         right: 100%;
-        background: ${CONFIG.palette.base} url("../img/bg-1.gif") repeat left;
+        background-color: ${CONFIG.palette.base};
         transition: all .6s;
 
         display: flex;
@@ -218,7 +221,6 @@ class Tabs extends Component {
         padding: 0 0 .5em 0;
         margin-bottom: 1.5em;
       }
-
       .categories ul .links .category-title {
         position: sticky;
         top: var(--topbar-h); 
@@ -266,9 +268,13 @@ class Tabs extends Component {
         position: absolute;
         display: flex;
         text-transform: uppercase;
+        writing-mode: vertical-rl;
+        text-orientation: upright;
+        white-space: nowrap;
         overflow-wrap: break-word;
         width: 25px;
         height: 250px;
+        max-height: calc(100% - 2em);
         padding: 1em;
         margin: auto;
         border-radius: 5px;
@@ -279,17 +285,23 @@ class Tabs extends Component {
         background: linear-gradient(to top, rgb(50 48 47 / 90%), transparent);
         color: var(--flavour);
         letter-spacing: 1px;
-        font: 500 30px 'Nunito', sans-serif;
-        text-align: center;
-        flex-wrap: wrap;
-        word-break: break-all;
+        font: 500 clamp(14px, 1.6vw, 20px) 'Nunito', sans-serif;
+        line-height: 1.05;
+                justify-content: center;
         align-items: center;
         backdrop-filter: blur(3px);
         pointer-events: none;
+        overflow: hidden;
       }
 
       .categories .link-icon { font-size: 27px; color: ${CONFIG.palette.text}; }
       .categories .link-icon + .link-name { margin-left: 10px; }
+      .categories .link-name {
+        max-width: 12ch;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
       .categories .links-wrapper { display: flex; flex-wrap: wrap; }
 
       .ti {

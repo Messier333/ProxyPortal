@@ -38,7 +38,6 @@ class Config {
       // Search engine shortcuts and their URLs
       engines: {
         p: ["https://www.perplexity.ai/search/?q=", "PerplexityAI"],
-        d: ["https://duckduckgo.com/?q=", "DuckDuckGo"],
         g: ["https://google.com/search?q=", "Google"],
       }
     },
