@@ -123,6 +123,28 @@ class Statusbar extends Component {
         color: ${CONFIG.palette.text};
         letter-spacing: .5px; padding: 10;
       }
+
+      .search-widget {
+        background: transparent;
+        border: 0;
+        color: ${CONFIG.palette.text};
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        min-width: 32px;
+        padding: 0;
+        border-radius: 4px;
+      }
+
+      .search-widget:first-child {
+        padding-left: 0;
+      }
+
+      .search-widget .material-icons {
+        font-size: 16px !important;
+        line-height: 1;
+      }
     `;
   }
 
@@ -135,6 +157,7 @@ class Statusbar extends Component {
           </button>
           <ul class="- indicator"></ul>
           <div class="+ widgets col-end">
+            <button class="+ widget search-widget" type="button" title="Search (S)"><i class="material-icons">search</i></button>
             <button class="+ widget dashboard-widget" type="button" title="Dashboard">Dashboard</button>
             <button class="+ widget logout-widget" type="button" title="Logout">Logout</button>
             <current-time class="+ widget time-widget"></current-time>
@@ -202,6 +225,15 @@ class Statusbar extends Component {
       window.onbeforeunload = () => this.saveCurrentTab();
     }
 
+    this.shadow.querySelector(".search-widget")?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const search = RenderedComponents["search-bar"];
+      if (!search || !search.refs?.search) return;
+
+      if (search.refs.search.classList.contains("active")) search.deactivate();
+      else search.activate();
+    });
+
     this.shadow.querySelector(".dashboard-widget")?.addEventListener("click", (e) => {
       e.stopPropagation();
       window.location.href = "/dashboard";
@@ -256,7 +288,19 @@ class Statusbar extends Component {
     if (document.activeElement !== document.body) return;
     if (target.shadow && target.shadow.activeElement) return;
 
-    if (Number.isInteger(parseInt(key)) && key <= this.externalRefs.categories.length) {
+    const categoriesLength = this.externalRefs.categories?.length ?? 0;
+
+    if (key === "ArrowRight" || key === "ArrowLeft") {
+      if (categoriesLength <= 0) return;
+      event.preventDefault();
+
+      const direction = key === "ArrowRight" ? 1 : -1;
+      const nextIndex = (this.currentTabIndex + direction + categoriesLength) % categoriesLength;
+      this.activateByKey(nextIndex);
+      return;
+    }
+
+    if (Number.isInteger(parseInt(key)) && key <= categoriesLength) {
       this.activateByKey(key - 1);
     }
   }

@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS portal_tabs (
                                            id BIGINT PRIMARY KEY,
                                            user_id BIGINT NOT NULL,
                                            name VARCHAR(255) NOT NULL,
+    background_url VARCHAR(1024),
     sort_order INTEGER NOT NULL,
 
     CONSTRAINT fk_portal_tabs_user
@@ -23,6 +24,9 @@ CREATE TABLE IF NOT EXISTS portal_tabs (
 
 CREATE INDEX IF NOT EXISTS idx_portal_tabs_user_sort
     ON portal_tabs (user_id, sort_order);
+
+ALTER TABLE IF EXISTS portal_tabs
+    ADD COLUMN IF NOT EXISTS background_url VARCHAR(1024);
 
 -- =========================
 -- PORTAL_CATEGORIES

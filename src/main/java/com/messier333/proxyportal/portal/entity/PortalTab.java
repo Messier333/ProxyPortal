@@ -44,6 +44,9 @@ public class PortalTab {
     @Column(name = "sort_order", nullable = false)
     private int sortOrder;
 
+    @Column(name = "background_url")
+    private String backgroundUrl;
+
     public static PortalTab createTab(User user, String name, int sortOrder) {
         PortalTab tab = new PortalTab();
         tab.user = user;
@@ -52,8 +55,12 @@ public class PortalTab {
         return tab;
     }
 
-    public void update(String name, String backgroundUrl, int sortOrder) {
+    public void update(String name, int sortOrder) {
         this.name = name;
         this.sortOrder = sortOrder;
+    }
+
+    public void setBackgroundUrl(String backgroundUrl) {
+        this.backgroundUrl = backgroundUrl;
     }
 }

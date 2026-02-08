@@ -53,6 +53,12 @@ class Search extends Component {
           width: 100%;
       }
 
+      #search > div {
+          width: min(760px, calc(100% - 56px));
+          padding: 0 8px;
+          box-sizing: border-box;
+      }
+
       #search input {
           border: 0;
           outline: 0;

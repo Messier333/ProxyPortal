@@ -41,21 +41,14 @@ function normalizeTabs(tabs) {
 const default_configuration = {
   overrideStorage: true,
   temperature: {
-    location: "London",
+    location: "Seoul",
     scale: "C",
   },
   clock: {
     format: "k:i p",
     icon_color: palette.maroon,
   },
-  additionalClocks: [
-    {
-      label: "UA",
-      timezone: "Europe/Kyiv",
-      format: "h:i",
-      icon_color: palette.peach,
-    },
-  ],
+  additionalClocks: [],
   search: {
     engines: {
       p: ["https://www.perplexity.ai/search/?q=", "PerplexityAI"],
@@ -76,6 +69,54 @@ const default_configuration = {
 };
 
 const CONFIG = new Config(default_configuration, palette);
+
+function normalizeDetectedCity(rawCity) {
+  if (!rawCity) return "";
+
+  let city = String(rawCity).trim().toLowerCase();
+  city = city.replace(/-(gun|si|gu|do|eup|myeon|dong)$/i, "");
+  city = city.replace(/-/g, " ").replace(/\s+/g, " ").trim();
+
+  // Title-case for cleaner display/query (e.g. "hongseong" -> "Hongseong")
+  city = city
+    .split(" ")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+
+  return city;
+}
+
+async function applyIpBasedWeatherLocation() {
+  try {
+    const response = await fetch("https://ipapi.co/json/");
+    if (!response.ok) return;
+
+    const data = await response.json();
+    const detectedCity = normalizeDetectedCity(data?.city || "");
+    if (!detectedCity) return;
+    if (detectedCity === CONFIG.temperature.location) return;
+
+    CONFIG.temperature = {
+      ...CONFIG.temperature,
+      location: detectedCity,
+    };
+
+    if (typeof RenderedComponents === "undefined") return;
+    const weather = RenderedComponents["weather-forecast"];
+    if (!weather || typeof weather.setDependencies !== "function") return;
+
+    weather.setDependencies();
+    const locationEl = weather.shadow?.querySelector(".weather-temperature-location");
+    if (locationEl) locationEl.textContent = weather.location;
+    if (typeof weather.setWeather === "function") {
+      await weather.setWeather();
+    }
+  } catch (e) {
+    console.warn("IP-based weather location lookup failed, using default city.", e);
+  }
+}
+
+applyIpBasedWeatherLocation();
 
 const root = document.querySelector(":root");
 root.style.setProperty("--bg", palette.mantle);
