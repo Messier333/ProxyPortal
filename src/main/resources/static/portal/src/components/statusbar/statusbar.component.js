@@ -24,6 +24,7 @@ class Statusbar extends Component {
   };
 
   currentTabIndex = 0;
+  lastArrowNavAt = 0;
 
   constructor() {
     super();
@@ -283,15 +284,34 @@ class Statusbar extends Component {
 
   handleKeyPress(event) {
     if (!event) return;
-    const { target, key } = event;
+    const { key } = event;
 
-    if (document.activeElement !== document.body) return;
-    if (target.shadow && target.shadow.activeElement) return;
+    // Ignore global tab navigation while user is typing in an editable control.
+    const active = document.activeElement;
+    const tag = active?.tagName?.toLowerCase?.() ?? "";
+    const isTypingTarget =
+      tag === "input" ||
+      tag === "textarea" ||
+      tag === "select" ||
+      Boolean(active?.isContentEditable);
+    if (isTypingTarget) return;
+
+    // If search overlay is open, arrow keys are used by the search component.
+    const search = RenderedComponents["search-bar"];
+    if (search?.refs?.search?.classList?.contains("active")) return;
 
     const categoriesLength = this.externalRefs.categories?.length ?? 0;
 
     if (key === "ArrowRight" || key === "ArrowLeft") {
       if (categoriesLength <= 0) return;
+      // Key-repeat can fire much faster than panel transitions, causing jitter.
+      if (event.repeat) {
+        const now = Date.now();
+        if (now - this.lastArrowNavAt < 120) return;
+        this.lastArrowNavAt = now;
+      } else {
+        this.lastArrowNavAt = Date.now();
+      }
       event.preventDefault();
 
       const direction = key === "ArrowRight" ? 1 : -1;
