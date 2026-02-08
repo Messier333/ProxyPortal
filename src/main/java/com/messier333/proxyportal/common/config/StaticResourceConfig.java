@@ -1,4 +1,4 @@
-package com.messier333.proxyportal.config;
+package com.messier333.proxyportal.common.config;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
