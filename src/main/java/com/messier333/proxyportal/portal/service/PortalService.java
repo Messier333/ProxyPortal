@@ -1,7 +1,6 @@
 package com.messier333.proxyportal.portal.service;
 
 import java.io.IOException;
-import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -330,12 +329,11 @@ public class PortalService {
     @Transactional
     public LinkResponse createLink(String username, Long categoryId, String name, String url, String icon, String iconColor, Integer sortOrder) {
         String normalizedUrl = normalizeUrl(url);
-        LinkVisual recommended = recommendLinkVisual(normalizedUrl);
         LinkCreateRequest request = new LinkCreateRequest(
                 name,
                 normalizedUrl,
-                normalizeIcon(icon, recommended.icon()),
-                normalizeIconColor(iconColor, recommended.iconColor()),
+                normalizeIcon(icon, DEFAULT_LINK_ICON),
+                normalizeIconColor(iconColor, DEFAULT_LINK_ICON_COLOR),
                 sortOrder
         );
         return createLink(username, categoryId, request);
@@ -632,29 +630,5 @@ public class PortalService {
         String trimmed = iconColor.trim();
         return trimmed.isBlank() ? fallback : trimmed;
     }
-
-    private LinkVisual recommendLinkVisual(String normalizedUrl) {
-        try {
-            URI uri = URI.create(normalizedUrl);
-            String host = uri.getHost() == null ? "" : uri.getHost().toLowerCase();
-            String path = uri.getPath() == null ? "" : uri.getPath().toLowerCase();
-
-            if (host.contains("mail.google.")) return new LinkVisual("brand-gmail", "#f38ba8");
-            if (host.contains("calendar.google.")) return new LinkVisual("calendar-filled", "#fab387");
-            if (host.contains("drive.google.")) return new LinkVisual("brand-google-drive", "#89b4fa");
-            if (host.contains("docs.google.") && path.contains("spreadsheets")) return new LinkVisual("table", "#a6e3a1");
-            if (host.contains("github.")) return new LinkVisual("brand-github", "#cba6f7");
-            if (host.contains("stackoverflow.")) return new LinkVisual("brand-stackoverflow", "#fab387");
-            if (host.contains("youtube.") || host.contains("youtu.be")) return new LinkVisual("brand-youtube", "#f38ba8");
-            if (host.contains("telegram.")) return new LinkVisual("brand-telegram", "#89b4fa");
-            if (host.contains("facebook.")) return new LinkVisual("brand-facebook", "#89b4fa");
-            if (host.contains("reddit.")) return new LinkVisual("brand-reddit", "#f38ba8");
-            if (host.contains("steam.")) return new LinkVisual("brand-steam", "#89b4fa");
-        } catch (IllegalArgumentException ignored) {
-        }
-        return new LinkVisual(DEFAULT_LINK_ICON, DEFAULT_LINK_ICON_COLOR);
-    }
-
-    private record LinkVisual(String icon, String iconColor) {}
 
 }

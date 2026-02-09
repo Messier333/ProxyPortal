@@ -12,6 +12,7 @@ const Dashboard = (() => {
   };
   const TABLER_ICON_CSS_PATH = "/portal/src/css/tabler-icons.min.css";
   const DEFAULT_ICON_NAME = "link";
+  const DEFAULT_ICON_COLOR = "#89b4fa";
   const ICON_RENDER_LIMIT_DEFAULT = 120;
   const ICON_RENDER_LIMIT_SEARCH = 280;
   const FEATURED_ICON_NAMES = [
@@ -43,10 +44,12 @@ const Dashboard = (() => {
     "cloud",
     "mail",
   ];
+  const DOMAIN_STOPWORDS = new Set([
+    "www", "com", "co", "net", "org", "io", "kr", "jp", "uk", "de", "edu", "gov",
+  ]);
 
-  let linkIconLocked = false;
-  let linkColorLocked = false;
   let allTablerIcons = dedupeIconNames(FALLBACK_ICON_NAMES);
+  let isIconSearchManual = false;
 
   function toast(msg) {
     const t = qs("#toast");
@@ -77,12 +80,11 @@ const Dashboard = (() => {
     if (tabEl) tabEl.selectedIndex = 0;
     if (catEl) catEl.selectedIndex = 0;
     if (iconEl) iconEl.value = "";
-    if (iconColorEl) iconColorEl.value = "#89b4fa";
+    if (iconColorEl) iconColorEl.value = DEFAULT_ICON_COLOR;
     if (iconSearchEl) iconSearchEl.value = "";
-    linkIconLocked = false;
-    linkColorLocked = false;
+    isIconSearchManual = false;
     renderIconPicker();
-    applySuggestedLinkVisual();
+    applyLinkVisualDefaults();
     filterLinkCategoriesByTab();
     sessionStorage.removeItem(STORAGE_KEYS.linkDraft);
     toast("링크 폼 초기화");
@@ -120,7 +122,8 @@ const Dashboard = (() => {
       const suggestedName = suggestNameFromUrl(safeUrl);
       if (suggestedName) nameEl.value = suggestedName;
     }
-    applySuggestedLinkVisual();
+    applyLinkVisualDefaults();
+    applySuggestedIconSearch(true);
     toast("NPM 링크를 링크 등록 폼에 채웠습니다.");
   }
 
@@ -129,33 +132,6 @@ const Dashboard = (() => {
     if (!trimmed) return "";
     if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) return trimmed.toLowerCase();
     return `https://${trimmed}`.toLowerCase();
-  }
-
-  function suggestLinkVisual(url) {
-    const normalized = parseNormalizedUrl(url);
-    if (!normalized) return { icon: "link", iconColor: "#89b4fa" };
-
-    try {
-      const parsed = new URL(normalized);
-      const host = (parsed.hostname || "").toLowerCase();
-      const path = (parsed.pathname || "").toLowerCase();
-
-      if (host.includes("mail.google.")) return { icon: "brand-gmail", iconColor: "#f38ba8" };
-      if (host.includes("calendar.google.")) return { icon: "calendar-filled", iconColor: "#fab387" };
-      if (host.includes("drive.google.")) return { icon: "brand-google-drive", iconColor: "#89b4fa" };
-      if (host.includes("docs.google.") && path.includes("spreadsheets")) return { icon: "table", iconColor: "#a6e3a1" };
-      if (host.includes("github.")) return { icon: "brand-github", iconColor: "#cba6f7" };
-      if (host.includes("stackoverflow.")) return { icon: "brand-stackoverflow", iconColor: "#fab387" };
-      if (host.includes("youtube.") || host.includes("youtu.be")) return { icon: "brand-youtube", iconColor: "#f38ba8" };
-      if (host.includes("telegram.")) return { icon: "brand-telegram", iconColor: "#89b4fa" };
-      if (host.includes("facebook.")) return { icon: "brand-facebook", iconColor: "#89b4fa" };
-      if (host.includes("reddit.")) return { icon: "brand-reddit", iconColor: "#f38ba8" };
-      if (host.includes("steam.")) return { icon: "brand-steam", iconColor: "#89b4fa" };
-    } catch (_) {
-      return { icon: "link", iconColor: "#89b4fa" };
-    }
-
-    return { icon: "link", iconColor: "#89b4fa" };
   }
 
   function normalizeIconName(iconName) {
@@ -217,7 +193,52 @@ const Dashboard = (() => {
       const rest = allTablerIcons.filter((name) => !featuredSet.has(name));
       return [...featured, ...rest];
     }
-    return allTablerIcons.filter((name) => name.includes(normalizedQuery));
+    const tokens = normalizedQuery
+      .split(/[\s,]+/)
+      .map((token) => token.trim())
+      .filter((token) => token.length > 0);
+    if (!tokens.length) return allTablerIcons;
+    return allTablerIcons.filter((name) => tokens.some((token) => name.includes(token)));
+  }
+
+  function extractSearchTokensFromText(value) {
+    return String(value ?? "")
+      .toLowerCase()
+      .split(/[^a-z0-9-]+/)
+      .map((token) => token.trim())
+      .filter((token) => token.length > 0);
+  }
+
+  function extractSearchTokensFromUrl(value) {
+    const normalized = parseNormalizedUrl(value);
+    if (!normalized) return [];
+    try {
+      const url = new URL(normalized);
+      return String(url.hostname ?? "")
+        .toLowerCase()
+        .split(".")
+        .map((token) => token.trim())
+        .filter((token) => token.length > 0 && !DOMAIN_STOPWORDS.has(token) && !/^\d+$/.test(token));
+    } catch (_) {
+      return [];
+    }
+  }
+
+  function buildSuggestedIconQuery() {
+    const linkNameEl = qs("#linkName");
+    const linkUrlEl = qs("#linkUrl");
+    const nameTokens = extractSearchTokensFromText(linkNameEl?.value);
+    const urlTokens = extractSearchTokensFromUrl(linkUrlEl?.value);
+    const tokens = Array.from(new Set([...nameTokens, ...urlTokens])).slice(0, 6);
+    return tokens.join(" ");
+  }
+
+  function applySuggestedIconSearch(force = false) {
+    const searchEl = qs("#linkIconSearch");
+    if (!searchEl) return;
+    if (isIconSearchManual && !force) return;
+    searchEl.value = buildSuggestedIconQuery();
+    renderIconPicker();
   }
 
   function renderIconPicker() {
@@ -233,7 +254,7 @@ const Dashboard = (() => {
     const visibleIcons = source.slice(0, limit);
 
     const selectedIcon = normalizeIconName(iconEl.value);
-    if (linkIconLocked && selectedIcon && !visibleIcons.includes(selectedIcon)) {
+    if (selectedIcon && !visibleIcons.includes(selectedIcon)) {
       visibleIcons.unshift(selectedIcon);
     }
 
@@ -265,7 +286,6 @@ const Dashboard = (() => {
       button.appendChild(iconNode);
       button.appendChild(labelNode);
       button.addEventListener("click", () => {
-        linkIconLocked = true;
         iconEl.value = iconName;
         syncIconPickerState();
       });
@@ -293,18 +313,17 @@ const Dashboard = (() => {
     }
   }
 
-  function applySuggestedLinkVisual() {
-    const urlEl = qs("#linkUrl");
+  function applyLinkVisualDefaults() {
     const iconEl = qs("#linkIcon");
     const iconColorEl = qs("#linkIconColor");
-    if (!urlEl || !iconEl || !iconColorEl) return;
+    if (!iconEl || !iconColorEl) return;
 
-    const suggested = suggestLinkVisual(urlEl.value);
-    if (!linkIconLocked) {
-      iconEl.value = normalizeIconName(suggested.icon);
+    const normalizedIcon = normalizeIconName(iconEl.value);
+    if (iconEl.value !== normalizedIcon) {
+      iconEl.value = normalizedIcon;
     }
-    if (!linkColorLocked) {
-      iconColorEl.value = suggested.iconColor;
+    if (!iconColorEl.value || !iconColorEl.value.trim()) {
+      iconColorEl.value = DEFAULT_ICON_COLOR;
     }
     syncIconPickerState();
   }
@@ -312,38 +331,24 @@ const Dashboard = (() => {
   function syncIconPickerState() {
     const pickerEl = qs("#linkIconPicker");
     const iconEl = qs("#linkIcon");
-    const hintEl = qs("#linkIconHint");
-    const autoBtn = qs("#linkIconAutoBtn");
     if (!pickerEl || !iconEl) return;
 
     const selectedIcon = normalizeIconName(iconEl.value);
     const items = Array.from(pickerEl.querySelectorAll(".iconpick__item"));
     items.forEach((item) => {
-      const isActive = linkIconLocked && item.dataset.icon === selectedIcon;
+      const isActive = item.dataset.icon === selectedIcon;
       item.classList.toggle("is-active", isActive);
     });
-
-    if (autoBtn) autoBtn.classList.toggle("is-active", !linkIconLocked);
-    if (!hintEl) return;
-
-    if (!linkIconLocked) {
-      hintEl.textContent = `자동 추천: ${iconLabel(selectedIcon)}`;
-      return;
-    }
-    hintEl.textContent = `선택 아이콘: ${iconLabel(selectedIcon)}`;
   }
 
   function bindIconPicker() {
     const searchEl = qs("#linkIconSearch");
-    const autoBtn = qs("#linkIconAutoBtn");
     const iconEl = qs("#linkIcon");
-    if (!searchEl || !autoBtn || !iconEl) return;
-
-    autoBtn.addEventListener("click", () => {
-      linkIconLocked = false;
-      applySuggestedLinkVisual();
+    if (!searchEl || !iconEl) return;
+    searchEl.addEventListener("input", () => {
+      isIconSearchManual = searchEl.value.trim().length > 0;
+      renderIconPicker();
     });
-    searchEl.addEventListener("input", renderIconPicker);
 
     if (!iconEl.value) iconEl.value = DEFAULT_ICON_NAME;
     renderIconPicker();
@@ -685,8 +690,8 @@ const Dashboard = (() => {
     const linkForm = qs("#linkForm");
     const linkTabEl = qs("#linkTabId");
     const linkCategoryEl = qs("#linkCategoryId");
+    const linkNameEl = qs("#linkName");
     const linkUrlEl = qs("#linkUrl");
-    const linkIconColorEl = qs("#linkIconColor");
     if (linkTabEl) {
       linkTabEl.addEventListener("change", () => {
         filterLinkCategoriesByTab();
@@ -694,17 +699,9 @@ const Dashboard = (() => {
       });
     }
     if (linkCategoryEl) linkCategoryEl.addEventListener("change", saveLinkDraft);
-    if (linkUrlEl) {
-      linkUrlEl.addEventListener("input", () => {
-        applySuggestedLinkVisual();
-      });
-    }
+    if (linkNameEl) linkNameEl.addEventListener("input", () => applySuggestedIconSearch());
+    if (linkUrlEl) linkUrlEl.addEventListener("input", () => applySuggestedIconSearch());
     bindIconPicker();
-    if (linkIconColorEl) {
-      linkIconColorEl.addEventListener("input", () => {
-        linkColorLocked = true;
-      });
-    }
     if (linkForm) {
       linkForm.addEventListener("submit", (event) => {
         const { duplicateName, duplicateUrl } = isLinkDuplicate();
@@ -724,9 +721,8 @@ const Dashboard = (() => {
 
     restoreCategoryDraft();
     restoreLinkDraft();
-    linkIconLocked = false;
-    linkColorLocked = false;
-    applySuggestedLinkVisual();
+    applyLinkVisualDefaults();
+    applySuggestedIconSearch();
     const serverToastMessage = qs("#serverToastMessage");
     const message = serverToastMessage?.dataset?.message;
     if (message) toast(message);

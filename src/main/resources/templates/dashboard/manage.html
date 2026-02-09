@@ -102,16 +102,15 @@
 
             <div class="row2">
               <label class="field">
-                <span class="field__label">아이콘 (자동 추천 + 직접 선택)</span>
+                <span class="field__label">아이콘 선택</span>
                 <input type="hidden" name="icon" id="linkIcon" value=""/>
                 <div class="iconpick__toolbar">
-                  <button class="btn btn--small btn--ghost is-active" type="button" id="linkIconAutoBtn">자동 추천 사용</button>
                   <a class="btn btn--small btn--ghost" href="https://tabler.io/icons" target="_blank" rel="noreferrer">tabler.io 아이콘 보기</a>
                 </div>
                 <input class="input mono" type="text" id="linkIconSearch" placeholder="아이콘 검색 (예: brand-github, calendar, mail)"/>
+                <div class="hint">표시 이름과 URL 입력값으로 추천 검색어가 자동 반영됩니다.</div>
                 <div class="iconpick iconpick--search" id="linkIconPicker"></div>
                 <div class="hint" id="linkIconCount">아이콘 로딩 중...</div>
-                <div class="hint" id="linkIconHint">자동 추천 사용 중</div>
               </label>
 
               <label class="field">
