@@ -60,6 +60,10 @@ public class PortalTab {
         this.sortOrder = sortOrder;
     }
 
+    public void setSortOrder(int sortOrder) {
+        this.sortOrder = sortOrder;
+    }
+
     public void setBackgroundUrl(String backgroundUrl) {
         this.backgroundUrl = backgroundUrl;
     }

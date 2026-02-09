@@ -1,12 +1,16 @@
 package com.messier333.proxyportal.portal.service;
 
 import java.io.IOException;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.Objects;
 import java.util.stream.Stream;
 
@@ -37,6 +41,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class PortalService {
     private static final String TAB_UPLOAD_PATH = "/uploads/portal-tabs/";
+    private static final String DEFAULT_LINK_ICON = "link";
+    private static final String DEFAULT_LINK_ICON_COLOR = "#89b4fa";
 
     private final PortalCategoryRepository portalCategoryRepository;
     private final PortalLinkRepository portalLinkRepository;
@@ -56,15 +62,24 @@ public class PortalService {
 
     @Transactional
     public TabResponse createTab(String username, TabCreateRequest tabCreateRequest){
+        String tabName = normalizeName(tabCreateRequest.name(), "tab name");
+        if (portalTabRepository.existsByUserUsernameAndNameIgnoreCase(username, tabName)) {
+            throw new IllegalArgumentException("이미 같은 이름의 탭이 있습니다.");
+        }
+        int nextSortOrder = nextTabSortOrder(username);
         PortalTab portalTab = PortalTab.createTab(
                 userRepository.findByUsername(username).orElseThrow(
                         () -> new IllegalArgumentException("User not found")
                 ),
-                tabCreateRequest.name(),
-                tabCreateRequest.sortOrder()
+                tabName,
+                nextSortOrder
         );
         Objects.requireNonNull(portalTab, "portalTab must not be null");
         PortalTab saved = portalTabRepository.save(portalTab);
+        Integer requestedSort = tabCreateRequest.sortOrder();
+        if (requestedSort != null && requestedSort > 0 && requestedSort != nextSortOrder) {
+            updateTabSortOrder(username, saved.getId(), requestedSort);
+        }
         return new TabResponse(
                 saved.getId(),
                 saved.getName(),
@@ -239,14 +254,23 @@ public class PortalService {
         PortalTab portalTab = portalTabRepository.findByIdAndUserUsername(tabId, username).orElseThrow(
                 () -> new IllegalArgumentException("tab not found or user not matched")
         );
+        String categoryName = normalizeName(categoryCreateRequest.name(), "category name");
+        if (portalCategoryRepository.existsByTabIdAndNameIgnoreCase(tabId, categoryName)) {
+            throw new IllegalArgumentException("이미 같은 이름의 카테고리가 있습니다.");
+        }
+        int nextSortOrder = nextCategorySortOrder(tabId);
         PortalCategory portalCategory = PortalCategory.create(
                 portalTab,
-                categoryCreateRequest.name(),
-                categoryCreateRequest.sortOrder()
+                categoryName,
+                nextSortOrder
         );
 
         Objects.requireNonNull(portalCategory, "portalCategory must not be null");
         PortalCategory saved = portalCategoryRepository.save(portalCategory);
+        Integer requestedSort = categoryCreateRequest.sortOrder();
+        if (requestedSort != null && requestedSort > 0 && requestedSort != nextSortOrder) {
+            updateCategorySortOrder(username, saved.getId(), requestedSort);
+        }
         return new CategoryResponse(
                 saved.getId(),
                 saved.getName(),
@@ -260,16 +284,29 @@ public class PortalService {
         PortalCategory portalCategory = portalCategoryRepository.findByIdAndTabUserUsername(categoryId, username).orElseThrow(
                 () -> new IllegalArgumentException("category not found or user not matched")
         );
+        String linkName = normalizeName(linkCreateRequest.name(), "link name");
+        String linkUrl = normalizeUrl(linkCreateRequest.url());
+        if (portalLinkRepository.existsByCategoryIdAndNameIgnoreCase(categoryId, linkName)) {
+            throw new IllegalArgumentException("이미 같은 이름의 링크가 있습니다.");
+        }
+        if (portalLinkRepository.existsByCategoryIdAndUrlIgnoreCase(categoryId, linkUrl)) {
+            throw new IllegalArgumentException("이미 같은 URL 링크가 있습니다.");
+        }
+        int nextSortOrder = nextLinkSortOrder(categoryId);
         PortalLink portalLink = PortalLink.create(
                 portalCategory,
-                linkCreateRequest.name(),
-                linkCreateRequest.url(),
+                linkName,
+                linkUrl,
                 linkCreateRequest.icon(),
                 linkCreateRequest.iconColor(),
-                linkCreateRequest.sortOrder()
+                nextSortOrder
         );
         Objects.requireNonNull(portalLink, "portalLink must not be null");
         PortalLink saved = portalLinkRepository.save(portalLink);
+        Integer requestedSort = linkCreateRequest.sortOrder();
+        if (requestedSort != null && requestedSort > 0 && requestedSort != nextSortOrder) {
+            updateLinkSortOrder(username, saved.getId(), requestedSort);
+        }
         return new LinkResponse(
                 saved.getId(),
                 saved.getName(),
@@ -278,6 +315,30 @@ public class PortalService {
                 saved.getIconColor(),
                 saved.getSortOrder()
         );
+    }
+
+    @Transactional
+    public LinkResponse createLink(String username, Long categoryId, String name, String url) {
+        return createLink(username, categoryId, name, url, null, null, null);
+    }
+
+    @Transactional
+    public LinkResponse createLink(String username, Long categoryId, String name, String url, String icon, String iconColor) {
+        return createLink(username, categoryId, name, url, icon, iconColor, null);
+    }
+
+    @Transactional
+    public LinkResponse createLink(String username, Long categoryId, String name, String url, String icon, String iconColor, Integer sortOrder) {
+        String normalizedUrl = normalizeUrl(url);
+        LinkVisual recommended = recommendLinkVisual(normalizedUrl);
+        LinkCreateRequest request = new LinkCreateRequest(
+                name,
+                normalizedUrl,
+                normalizeIcon(icon, recommended.icon()),
+                normalizeIconColor(iconColor, recommended.iconColor()),
+                sortOrder
+        );
+        return createLink(username, categoryId, request);
     }
 
     @Transactional
@@ -295,5 +356,305 @@ public class PortalService {
                 List.of()
         );
     }
+
+    @Transactional
+    public void deleteTab(String username, Long tabId) {
+        PortalTab target = portalTabRepository.findByIdAndUserUsername(tabId, username)
+                .orElseThrow(() -> new IllegalArgumentException("tab not found or user not matched"));
+
+        List<PortalCategory> categories = portalCategoryRepository.findAllByTabIdOrderBySortOrderAscIdAsc(tabId);
+        for (PortalCategory category : categories) {
+            List<PortalLink> links = portalLinkRepository.findAllByCategoryIdOrderBySortOrderAscIdAsc(category.getId());
+            if (!links.isEmpty()) {
+                portalLinkRepository.deleteAll(links);
+            }
+        }
+        if (!categories.isEmpty()) {
+            portalCategoryRepository.deleteAll(categories);
+        }
+
+        deleteBackgroundIfManaged(target.getBackgroundUrl());
+        portalTabRepository.delete(target);
+        normalizeTabSortOrders(username);
+    }
+
+    @Transactional
+    public void deleteCategory(String username, Long categoryId) {
+        PortalCategory target = portalCategoryRepository.findByIdAndTabUserUsername(categoryId, username)
+                .orElseThrow(() -> new IllegalArgumentException("category not found or user not matched"));
+        Long tabId = target.getTab().getId();
+
+        List<PortalLink> links = portalLinkRepository.findAllByCategoryIdOrderBySortOrderAscIdAsc(categoryId);
+        if (!links.isEmpty()) {
+            portalLinkRepository.deleteAll(links);
+        }
+
+        portalCategoryRepository.delete(target);
+        normalizeCategorySortOrders(tabId);
+    }
+
+    @Transactional
+    public void deleteLink(String username, Long linkId) {
+        PortalLink target = portalLinkRepository.findByIdAndCategoryTabUserUsername(linkId, username)
+                .orElseThrow(() -> new IllegalArgumentException("link not found or user not matched"));
+        Long categoryId = target.getCategory().getId();
+
+        portalLinkRepository.delete(target);
+        normalizeLinkSortOrders(categoryId);
+    }
+
+    @Transactional
+    public void updateTabSortOrder(String username, Long tabId, Integer sortOrder) {
+        int requestedSort = normalizePositiveSort(sortOrder, "tab sortOrder");
+        PortalTab target = portalTabRepository.findByIdAndUserUsername(tabId, username)
+                .orElseThrow(() -> new IllegalArgumentException("tab not found or user not matched"));
+        List<PortalTab> siblings = new ArrayList<>(portalTabRepository.findAllByUserUsernameOrderBySortOrderAscIdAsc(username));
+        reorderTabs(siblings, target, requestedSort);
+    }
+
+    @Transactional
+    public void updateCategorySortOrder(String username, Long categoryId, Integer sortOrder) {
+        int requestedSort = normalizePositiveSort(sortOrder, "category sortOrder");
+        PortalCategory target = portalCategoryRepository.findByIdAndTabUserUsername(categoryId, username)
+                .orElseThrow(() -> new IllegalArgumentException("category not found or user not matched"));
+        List<PortalCategory> siblings = new ArrayList<>(portalCategoryRepository.findAllByTabIdOrderBySortOrderAscIdAsc(target.getTab().getId()));
+        reorderCategories(siblings, target, requestedSort);
+    }
+
+    @Transactional
+    public void updateLinkSortOrder(String username, Long linkId, Integer sortOrder) {
+        int requestedSort = normalizePositiveSort(sortOrder, "link sortOrder");
+        PortalLink target = portalLinkRepository.findByIdAndCategoryTabUserUsername(linkId, username)
+                .orElseThrow(() -> new IllegalArgumentException("link not found or user not matched"));
+        List<PortalLink> siblings = new ArrayList<>(portalLinkRepository.findAllByCategoryIdOrderBySortOrderAscIdAsc(target.getCategory().getId()));
+        reorderLinks(siblings, target, requestedSort);
+    }
+
+    @Transactional
+    public void reorderTabsByIds(String username, List<Long> orderedTabIds) {
+        List<PortalTab> siblings = new ArrayList<>(portalTabRepository.findAllByUserUsernameOrderBySortOrderAscIdAsc(username));
+        validateReorderIds(siblings.stream().map(PortalTab::getId).toList(), orderedTabIds, "tabs");
+        for (int i = 0; i < orderedTabIds.size(); i++) {
+            Long targetId = orderedTabIds.get(i);
+            PortalTab target = siblings.stream()
+                    .filter(tab -> tab.getId().equals(targetId))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException("tab not found"));
+            target.setSortOrder(i + 1);
+        }
+    }
+
+    @Transactional
+    public void reorderCategoriesByIds(String username, Long tabId, List<Long> orderedCategoryIds) {
+        portalTabRepository.findByIdAndUserUsername(tabId, username)
+                .orElseThrow(() -> new IllegalArgumentException("tab not found or user not matched"));
+        List<PortalCategory> siblings = new ArrayList<>(portalCategoryRepository.findAllByTabIdOrderBySortOrderAscIdAsc(tabId));
+        validateReorderIds(siblings.stream().map(PortalCategory::getId).toList(), orderedCategoryIds, "categories");
+        for (int i = 0; i < orderedCategoryIds.size(); i++) {
+            Long targetId = orderedCategoryIds.get(i);
+            PortalCategory target = siblings.stream()
+                    .filter(category -> category.getId().equals(targetId))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException("category not found"));
+            target.setSortOrder(i + 1);
+        }
+    }
+
+    @Transactional
+    public void reorderLinksByIds(String username, Long categoryId, List<Long> orderedLinkIds) {
+        portalCategoryRepository.findByIdAndTabUserUsername(categoryId, username)
+                .orElseThrow(() -> new IllegalArgumentException("category not found or user not matched"));
+        List<PortalLink> siblings = new ArrayList<>(portalLinkRepository.findAllByCategoryIdOrderBySortOrderAscIdAsc(categoryId));
+        validateReorderIds(siblings.stream().map(PortalLink::getId).toList(), orderedLinkIds, "links");
+        for (int i = 0; i < orderedLinkIds.size(); i++) {
+            Long targetId = orderedLinkIds.get(i);
+            PortalLink target = siblings.stream()
+                    .filter(link -> link.getId().equals(targetId))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException("link not found"));
+            target.setSortOrder(i + 1);
+        }
+    }
+
+    private int nextTabSortOrder(String username) {
+        return portalTabRepository.findAllByUserUsernameOrderBySortOrderAscIdAsc(username).size() + 1;
+    }
+
+    private int nextCategorySortOrder(Long tabId) {
+        return portalCategoryRepository.findAllByTabIdOrderBySortOrderAscIdAsc(tabId).size() + 1;
+    }
+
+    private int nextLinkSortOrder(Long categoryId) {
+        return portalLinkRepository.findAllByCategoryIdOrderBySortOrderAscIdAsc(categoryId).size() + 1;
+    }
+
+    private void normalizeTabSortOrders(String username) {
+        List<PortalTab> tabs = portalTabRepository.findAllByUserUsernameOrderBySortOrderAscIdAsc(username);
+        for (int i = 0; i < tabs.size(); i++) {
+            int normalizedSort = i + 1;
+            PortalTab tab = tabs.get(i);
+            if (tab.getSortOrder() != normalizedSort) {
+                tab.setSortOrder(normalizedSort);
+            }
+        }
+    }
+
+    private void normalizeCategorySortOrders(Long tabId) {
+        List<PortalCategory> categories = portalCategoryRepository.findAllByTabIdOrderBySortOrderAscIdAsc(tabId);
+        for (int i = 0; i < categories.size(); i++) {
+            int normalizedSort = i + 1;
+            PortalCategory category = categories.get(i);
+            if (category.getSortOrder() != normalizedSort) {
+                category.setSortOrder(normalizedSort);
+            }
+        }
+    }
+
+    private void normalizeLinkSortOrders(Long categoryId) {
+        List<PortalLink> links = portalLinkRepository.findAllByCategoryIdOrderBySortOrderAscIdAsc(categoryId);
+        for (int i = 0; i < links.size(); i++) {
+            int normalizedSort = i + 1;
+            PortalLink link = links.get(i);
+            if (link.getSortOrder() != normalizedSort) {
+                link.setSortOrder(normalizedSort);
+            }
+        }
+    }
+
+    private void validateReorderIds(List<Long> existingIds, List<Long> orderedIds, String targetName) {
+        if (existingIds.isEmpty() && orderedIds.isEmpty()) {
+            return;
+        }
+        if (orderedIds == null || orderedIds.isEmpty()) {
+            throw new IllegalArgumentException(targetName + " ids must not be empty");
+        }
+        if (existingIds.size() != orderedIds.size()) {
+            throw new IllegalArgumentException(targetName + " ids size mismatch");
+        }
+        Set<Long> existingSet = new LinkedHashSet<>(existingIds);
+        Set<Long> orderedSet = new LinkedHashSet<>(orderedIds);
+        if (existingSet.size() != existingIds.size()) {
+            throw new IllegalArgumentException("existing " + targetName + " contains duplicate ids");
+        }
+        if (orderedSet.size() != orderedIds.size()) {
+            throw new IllegalArgumentException("requested " + targetName + " contains duplicate ids");
+        }
+        if (!existingSet.equals(orderedSet)) {
+            throw new IllegalArgumentException("requested " + targetName + " mismatch");
+        }
+    }
+
+    private int normalizePositiveSort(Integer sortOrder, String fieldName) {
+        if (sortOrder == null) {
+            throw new IllegalArgumentException(fieldName + " must not be null");
+        }
+        if (sortOrder < 1) {
+            throw new IllegalArgumentException(fieldName + " must be greater than 0");
+        }
+        return sortOrder;
+    }
+
+    private void reorderTabs(List<PortalTab> siblings, PortalTab target, int requestedSort) {
+        siblings.removeIf(tab -> tab.getId().equals(target.getId()));
+        int insertIndex = Math.min(Math.max(requestedSort - 1, 0), siblings.size());
+        siblings.add(insertIndex, target);
+
+        for (int i = 0; i < siblings.size(); i++) {
+            int normalizedSort = i + 1;
+            PortalTab tab = siblings.get(i);
+            if (tab.getSortOrder() != normalizedSort) {
+                tab.setSortOrder(normalizedSort);
+            }
+        }
+    }
+
+    private void reorderCategories(List<PortalCategory> siblings, PortalCategory target, int requestedSort) {
+        siblings.removeIf(category -> category.getId().equals(target.getId()));
+        int insertIndex = Math.min(Math.max(requestedSort - 1, 0), siblings.size());
+        siblings.add(insertIndex, target);
+
+        for (int i = 0; i < siblings.size(); i++) {
+            int normalizedSort = i + 1;
+            PortalCategory category = siblings.get(i);
+            if (category.getSortOrder() != normalizedSort) {
+                category.setSortOrder(normalizedSort);
+            }
+        }
+    }
+
+    private void reorderLinks(List<PortalLink> siblings, PortalLink target, int requestedSort) {
+        siblings.removeIf(link -> link.getId().equals(target.getId()));
+        int insertIndex = Math.min(Math.max(requestedSort - 1, 0), siblings.size());
+        siblings.add(insertIndex, target);
+
+        for (int i = 0; i < siblings.size(); i++) {
+            int normalizedSort = i + 1;
+            PortalLink link = siblings.get(i);
+            if (link.getSortOrder() != normalizedSort) {
+                link.setSortOrder(normalizedSort);
+            }
+        }
+    }
+
+    private String normalizeUrl(String url) {
+        if (url == null) {
+            throw new IllegalArgumentException("url must not be null");
+        }
+        String trimmed = url.trim();
+        if (trimmed.isBlank()) {
+            throw new IllegalArgumentException("url must not be blank");
+        }
+        if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+            return trimmed;
+        }
+        return "https://" + trimmed;
+    }
+
+    private String normalizeName(String value, String fieldName) {
+        if (value == null) {
+            throw new IllegalArgumentException(fieldName + " must not be null");
+        }
+        String trimmed = value.trim();
+        if (trimmed.isBlank()) {
+            throw new IllegalArgumentException(fieldName + " must not be blank");
+        }
+        return trimmed;
+    }
+
+    private String normalizeIcon(String icon, String fallback) {
+        if (icon == null) return fallback;
+        String trimmed = icon.trim();
+        return trimmed.isBlank() ? fallback : trimmed;
+    }
+
+    private String normalizeIconColor(String iconColor, String fallback) {
+        if (iconColor == null) return fallback;
+        String trimmed = iconColor.trim();
+        return trimmed.isBlank() ? fallback : trimmed;
+    }
+
+    private LinkVisual recommendLinkVisual(String normalizedUrl) {
+        try {
+            URI uri = URI.create(normalizedUrl);
+            String host = uri.getHost() == null ? "" : uri.getHost().toLowerCase();
+            String path = uri.getPath() == null ? "" : uri.getPath().toLowerCase();
+
+            if (host.contains("mail.google.")) return new LinkVisual("brand-gmail", "#f38ba8");
+            if (host.contains("calendar.google.")) return new LinkVisual("calendar-filled", "#fab387");
+            if (host.contains("drive.google.")) return new LinkVisual("brand-google-drive", "#89b4fa");
+            if (host.contains("docs.google.") && path.contains("spreadsheets")) return new LinkVisual("table", "#a6e3a1");
+            if (host.contains("github.")) return new LinkVisual("brand-github", "#cba6f7");
+            if (host.contains("stackoverflow.")) return new LinkVisual("brand-stackoverflow", "#fab387");
+            if (host.contains("youtube.") || host.contains("youtu.be")) return new LinkVisual("brand-youtube", "#f38ba8");
+            if (host.contains("telegram.")) return new LinkVisual("brand-telegram", "#89b4fa");
+            if (host.contains("facebook.")) return new LinkVisual("brand-facebook", "#89b4fa");
+            if (host.contains("reddit.")) return new LinkVisual("brand-reddit", "#f38ba8");
+            if (host.contains("steam.")) return new LinkVisual("brand-steam", "#89b4fa");
+        } catch (IllegalArgumentException ignored) {
+        }
+        return new LinkVisual(DEFAULT_LINK_ICON, DEFAULT_LINK_ICON_COLOR);
+    }
+
+    private record LinkVisual(String icon, String iconColor) {}
 
 }

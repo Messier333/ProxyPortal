@@ -58,6 +58,10 @@ public class PortalCategory {
         this.sortOrder = sortOrder;
     }
 
+    public void setSortOrder(int sortOrder) {
+        this.sortOrder = sortOrder;
+    }
+
     public void setCategoryTab(PortalTab tab) {
         this.tab = tab;
     }

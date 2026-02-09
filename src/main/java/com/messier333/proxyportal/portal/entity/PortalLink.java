@@ -10,6 +10,7 @@ import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -21,7 +22,17 @@ import lombok.NoArgsConstructor;
     indexes=@Index(
         name="idx_portal_links_category_sort",
         columnList="category_id, sort_order"
-    )
+    ),
+    uniqueConstraints = {
+        @UniqueConstraint(
+            name = "uq_portal_links_category_name",
+            columnNames = {"category_id", "name"}
+        ),
+        @UniqueConstraint(
+            name = "uq_portal_links_category_url",
+            columnNames = {"category_id", "url"}
+        )
+    }
 )
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class PortalLink {
@@ -70,6 +81,10 @@ public class PortalLink {
         this.url = url;
         this.icon = icon;
         this.iconColor = iconColor;
+        this.sortOrder = sortOrder;
+    }
+
+    public void setSortOrder(int sortOrder) {
         this.sortOrder = sortOrder;
     }
 }

@@ -1,14 +1,30 @@
+const TAB_FLAVOURS = [
+  CONFIG.palette.green,
+  CONFIG.palette.peach,
+  CONFIG.palette.red,
+  CONFIG.palette.blue,
+  CONFIG.palette.mauve,
+];
 
+function getLinkFlavour(index) {
+  if (!Number.isInteger(index) || index < 0) return TAB_FLAVOURS[0] ?? CONFIG.palette.green;
+  return TAB_FLAVOURS[index % TAB_FLAVOURS.length] ?? CONFIG.palette.green;
+}
 
 class Links extends Component {
   constructor() { super(); }
 
-  static getIcon(link) {
-    const defaultColor = CONFIG.palette.base;
+  static getIcon(link, linkIndex) {
+    const rawColor = link?.icon_color ?? "";
+    const normalizedColor = String(rawColor).trim().toLowerCase();
+    const defaultColor = getLinkFlavour(linkIndex);
+    const iconColor = normalizedColor === "" || normalizedColor === "#89b4fa"
+      ? defaultColor
+      : rawColor;
 
     return link.icon
       ? `<i class="ti ti-${link.icon} link-icon"
-            style="color: ${link.icon_color ?? defaultColor}"></i>`
+            style="color: ${iconColor}"></i>`
       : "";
   }
 
@@ -26,10 +42,10 @@ class Links extends Component {
             <div class="links-wrapper">
               ${safeLinks
                 .map(
-                  (link) => `
+                  (link, linkIndex) => `
                   <div class="link-info">
                     <a class="link" href="${link.url}" target="_blank" rel="noopener noreferrer">
-                      ${Links.getIcon(link)}
+                      ${Links.getIcon(link, linkIndex)}
                       ${link.name ? `<p class="link-name">${link.name}</p>` : ""}
                     </a>
                   </div>`,
@@ -111,9 +127,10 @@ class Tabs extends Component {
 
       #panels {
         border-radius: 5px 0 0 5px;
-        width: 90%;
+        width: min(92vw, 1200px);
         max-width: 1200px;
-        height: 450px;
+        aspect-ratio: 8 / 3;
+        height: auto;
         right: 0;
         left: 0;
         top: 0;
@@ -168,18 +185,24 @@ class Tabs extends Component {
       }
 
       .categories ul .links {
+        --links-pad-x: clamp(48px, 6.2vw, 72px);
+        --links-pad-top: clamp(20px, 3vh, 30px);
+        --links-pad-bottom: clamp(16px, 2.4vh, 24px);
+
         position: relative;
         flex: 1;
         height: 100%;
         width: 70%;
         background: ${CONFIG.palette.base};
 
-        overflow-y: auto;
+        overflow-y: hidden;
         overflow-x: hidden;
         box-sizing: border-box;
-        scrollbar-gutter: stable;
+        scrollbar-gutter: auto;
+        display: grid;
+        align-content: center;
 
-        padding: 5%;
+        padding: var(--links-pad-top) var(--links-pad-x) var(--links-pad-bottom);
         box-shadow: inset -1px 0 var(--flavour);
 
         scroll-behavior: smooth;
@@ -209,20 +232,28 @@ class Tabs extends Component {
   height: 0 !important;
 }
 
-.categories ul .links {
+.categories ul .links.has-overflow {
+  overflow-y: auto;
+  scrollbar-gutter: stable;
   scrollbar-width: thin;
   scrollbar-color: ${CONFIG.palette.surface0} transparent;
+  align-content: start;
 
-  padding: 5%; 
-  padding-right: calc(5% - 14px); 
+  padding-right: calc(var(--links-pad-x) - 12px);
 }
 
       .categories ul .links li { list-style: none; }
 
       .categories ul .links .category-block:not(:last-child) {
         box-shadow: 0 1px 0 ${CONFIG.palette.text};
-        padding: 0 0 .5em 0;
+        padding: 0 0 .72em 0;
         margin-bottom: 1.5em;
+      }
+      .categories ul .links:not(.has-overflow) > .category-block {
+        transform: translateY(-14px);
+      }
+      .categories ul .links .category-block:not(:last-child) .links-wrapper {
+        margin-bottom: .34em;
       }
       .categories ul .links .category-title {
         position: sticky;
@@ -232,14 +263,14 @@ class Tabs extends Component {
         color: ${CONFIG.palette.text};
         opacity: 0.55;
         font-size: 13px;
-        margin: 0 0 1em 0;
+        margin: 0 0 .9em 0;
         font-weight: 600;
         letter-spacing: 1px;
         text-transform: uppercase;
         font-family: 'Raleway', sans-serif;
 
         background: ${CONFIG.palette.base};
-        padding: .4em 0;
+        padding: .3em 0;
       }
 
       .categories ul .links .link {
@@ -249,16 +280,14 @@ class Tabs extends Component {
         transition: all .2s;
         display: inline-flex;
         align-items: center;
-        padding: .4em .7em;
+        padding: .35em .65em;
         background: ${CONFIG.palette.mantle};
         box-shadow: 0 4px ${CONFIG.palette.mantle}, 0 5px 10px rgb(0 0 0 / 20%);
         border-radius: 8px;
-        margin-bottom: .7em;
         will-change: transform;
       }
 
       .categories .link-info { display: inline-flex; }
-      .categories .link-info:not(:last-child) { margin-right: .5em; }
 
       .categories ul .links .link:hover {
         transform: translate(0, 4px);
@@ -305,7 +334,11 @@ class Tabs extends Component {
         overflow: hidden;
         text-overflow: ellipsis;
       }
-      .categories .links-wrapper { display: flex; flex-wrap: wrap; }
+      .categories .links-wrapper {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .5em;
+      }
 
       .ti {
         animation: fadeInAnimation ease .5s;
@@ -337,7 +370,28 @@ class Tabs extends Component {
     `;
   }
 
+  syncLinksOverflow() {
+    const containers = this.shadow.querySelectorAll(".categories ul .links");
+    containers.forEach((container) => {
+      const hasOverflow = container.scrollHeight - container.clientHeight > 10;
+      container.classList.toggle("has-overflow", hasOverflow);
+    });
+  }
+
   connectedCallback() {
-    this.render();
+    this.render().then(() => {
+      this.syncLinksOverflow();
+      requestAnimationFrame(() => this.syncLinksOverflow());
+      setTimeout(() => this.syncLinksOverflow(), 300);
+
+      this.handleResize = () => this.syncLinksOverflow();
+      window.addEventListener("resize", this.handleResize);
+    });
+  }
+
+  disconnectedCallback() {
+    if (this.handleResize) {
+      window.removeEventListener("resize", this.handleResize);
+    }
   }
 }

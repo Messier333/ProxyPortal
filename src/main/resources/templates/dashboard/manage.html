@@ -8,19 +8,19 @@
     <main class="main" id="main">
       <th:block th:replace="~{dashboard/fragments/topbar :: topbar('등록/관리')}"></th:block>
       <th:block th:replace="~{dashboard/fragments/toast :: toast}"></th:block>
+      <div id="serverToastMessage" th:if="${toastMessage != null}" th:attr="data-message=${toastMessage}" hidden></div>
 
       <section class="grid">
 
-        <!-- 왼쪽: 등록 폼들 -->
         <article class="card">
           <div class="card__head">
             <h2>탭 등록</h2>
           </div>
 
-          <form class="form" th:action="@{/dashboard/manage/tabs}" method="post" enctype="multipart/form-data">
+          <form class="form" th:action="@{/dashboard/manage/tabs}" method="post" enctype="multipart/form-data" id="tabForm">
             <label class="field">
               <span class="field__label">탭 이름</span>
-              <input class="input" name="name" placeholder="예: Home" required/>
+              <input class="input" name="name" id="tabName" placeholder="예: Home" required/>
             </label>
 
             <label class="field">
@@ -41,10 +41,10 @@
             <h2>카테고리 등록</h2>
           </div>
 
-          <form class="form" th:action="@{/dashboard/manage/categories}" method="post">
+          <form class="form" th:action="@{/dashboard/manage/categories}" method="post" id="categoryForm">
             <label class="field">
               <span class="field__label">탭 선택</span>
-              <select class="select" name="tabId" required>
+              <select class="select" name="tabId" id="categoryTabId" required>
                 <option value="" disabled selected>탭을 선택하세요</option>
                 <option th:each="t : ${tabs}" th:value="${t.id}" th:text="${t.name}">Home</option>
               </select>
@@ -52,17 +52,16 @@
 
             <label class="field">
               <span class="field__label">카테고리 이름</span>
-              <input class="input" name="name" placeholder="예: Media" required/>
+              <input class="input" name="name" id="categoryName" placeholder="예: Media" required/>
             </label>
 
             <button class="btn" type="submit">카테고리 추가</button>
           </form>
+        </article>
 
-          <div class="divider"></div>
-
+        <article class="card">
           <div class="card__head">
             <h2>링크 등록</h2>
-            <div class="hint">오른쪽 NPM 링크에서 “사용”을 누르면 자동으로 채워짐</div>
           </div>
 
           <form class="form" th:action="@{/dashboard/links}" method="post" id="linkForm">
@@ -79,11 +78,14 @@
                 <span class="field__label">카테고리</span>
                 <select class="select" name="categoryId" id="linkCategoryId" required>
                   <option value="" disabled selected>카테고리 선택</option>
-                  <option th:each="c : ${categories}"
-                          th:value="${c.id}"
-                          th:text="${c.name}">
-                    Media
-                  </option>
+                  <th:block th:each="t : ${tabs}">
+                    <option th:each="c : ${t.categories}"
+                            th:value="${c.id}"
+                            th:text="${c.name}"
+                            th:attr="data-tab-id=${t.id},data-category-name=${c.name}">
+                      Media
+                    </option>
+                  </th:block>
                 </select>
               </label>
             </div>
@@ -98,44 +100,59 @@
               <input class="input mono" name="url" id="linkUrl" placeholder="https://example.com" required/>
             </label>
 
+            <div class="row2">
+              <label class="field">
+                <span class="field__label">아이콘 (자동 추천 + 직접 선택)</span>
+                <input type="hidden" name="icon" id="linkIcon" value=""/>
+                <div class="iconpick__toolbar">
+                  <button class="btn btn--small btn--ghost is-active" type="button" id="linkIconAutoBtn">자동 추천 사용</button>
+                  <a class="btn btn--small btn--ghost" href="https://tabler.io/icons" target="_blank" rel="noreferrer">tabler.io 아이콘 보기</a>
+                </div>
+                <input class="input mono" type="text" id="linkIconSearch" placeholder="아이콘 검색 (예: brand-github, calendar, mail)"/>
+                <div class="iconpick iconpick--search" id="linkIconPicker"></div>
+                <div class="hint" id="linkIconCount">아이콘 로딩 중...</div>
+                <div class="hint" id="linkIconHint">자동 추천 사용 중</div>
+              </label>
+
+              <label class="field">
+                <span class="field__label">아이콘 색상</span>
+                <input class="input" type="color" name="iconColor" id="linkIconColor" value="#89b4fa"/>
+              </label>
+            </div>
+
             <div class="actions">
               <button class="btn" type="submit">링크 등록</button>
               <button class="btn btn--ghost" type="button" id="clearLinkForm">초기화</button>
             </div>
           </form>
-        </article>
-
-        <!-- 오른쪽: NPM 링크 + 현재 등록된 상태 -->
-        <article class="card card--full">
-          <div class="card__head">
-            <h2>NPM에서 가져온 링크</h2>
-            <div class="hint">백엔드에서 <span class="mono">npmLinks</span> 모델로 전달</div>
-          </div>
-
-<div class="list">
-  <div class="empty" th:if="${npmLinks == null or #lists.isEmpty(npmLinks)}">
-    NPM 링크가 없습니다.
-  </div>
-
-  <div class="item item--npm" th:each="n : ${npmLinks}">
-    <div class="item__col">
-      <div class="item__title" th:text="${n}">domain</div>
-      <div class="item__meta mono" th:text="${'https://' + n}">https://domain</div>
-    </div>
-
-    <button class="btn btn--small"
-            type="button"
-            th:attr="data-name=${n}, data-url=${'https://' + n}"
-            onclick="Dashboard.useNpmLink(this)">
-      사용
-    </button>
-  </div>
-</div>
 
           <div class="divider"></div>
 
           <div class="card__head">
+            <h2>NPM 링크에서 가져오기</h2>
+            <div class="hint">사용 버튼으로 URL 자동 채우기</div>
+          </div>
+
+          <div class="list npm-list">
+            <div class="empty" th:if="${npmLinks == null or #lists.isEmpty(npmLinks)}">불러온 NPM 링크가 없습니다.</div>
+            <div class="item item--npm" th:each="npmUrl : ${npmLinks}">
+              <div class="item__col">
+                <div class="item__title mono" th:text="${npmUrl}">example.company.com</div>
+              </div>
+              <button class="btn btn--small btn--ghost js-use-npm-link"
+                      type="button"
+                      th:attr="data-npm-url=${npmUrl}">
+                사용
+              </button>
+            </div>
+          </div>
+        </article>
+
+        <!-- 오른쪽: 현재 등록된 상태 -->
+        <article class="card card--full">
+          <div class="card__head">
             <h2>현재 추가된 것</h2>
+            <div class="hint">드래그로 순서를 바꿀 수 있습니다</div>
           </div>
 
           <div class="subgrid">
@@ -143,41 +160,48 @@
               <div class="mini__head">탭</div>
               <div class="mini__body">
                 <div class="empty" th:if="${tabs == null or #lists.isEmpty(tabs)}">없음</div>
-                <div class="chip chip--tab" th:each="t : ${tabs}"
-                     th:with="hasBg=${t.backgroundUrl != null and !#strings.isEmpty(t.backgroundUrl)},
-                              bgName=${hasBg ? t.backgroundUrl.substring(t.backgroundUrl.lastIndexOf('/') + 1) : '이미지 없음'}">
-                  <div class="tab-row-top">
-                    <form class="tab-rename-form" th:action="@{|/dashboard/manage/tabs/${t.id}/rename|}" method="post">
-                      <input class="input input--sm" type="text" name="name" th:value="${t.name}" required/>
-                      <button class="btn btn--small btn--ghost" type="submit">이름 변경</button>
-                    </form>
-                    <span class="tab-status"
-                          th:classappend="${hasBg} ? ' is-on' : ' is-off'"
-                          th:text="${hasBg ? bgName : '이미지 없음'}">
-                      적용 파일명
-                    </span>
-                  </div>
-                  <div class="tab-row-actions">
-                  <form class="tab-upload-form" th:action="@{|/dashboard/manage/tabs/${t.id}/background|}" method="post" enctype="multipart/form-data">
-                    <div class="filepick filepick--compact">
-                      <input class="filepick__input" th:id="|tabBg-${t.id}|" type="file" name="backgroundImage" accept="image/*" required/>
-                      <label class="filepick__btn" th:for="|tabBg-${t.id}|">파일 선택</label>
-                      <span class="filepick__name"
-                            th:attr="data-empty-label=${bgName}"
-                            th:text="${bgName}">
-                        이미지 없음
+                <div class="sortlist"
+                     data-sort-type="tabs"
+                     data-sort-endpoint="/dashboard/manage/reorder/tabs">
+                  <div class="chip chip--tab sortitem"
+                       th:each="t : ${tabs}"
+                       th:attr="data-id=${t.id}"
+                       th:with="hasBg=${t.backgroundUrl != null and !#strings.isEmpty(t.backgroundUrl)},
+                                bgName=${hasBg ? t.backgroundUrl.substring(t.backgroundUrl.lastIndexOf('/') + 1) : '이미지 없음'}">
+                    <div class="tab-row-top">
+                      <button class="sort-handle" type="button" aria-label="탭 순서 이동">::</button>
+                      <form class="tab-rename-form" th:action="@{|/dashboard/manage/tabs/${t.id}/rename|}" method="post">
+                        <input class="input input--sm" type="text" name="name" th:value="${t.name}" required/>
+                        <button class="btn btn--small btn--ghost" type="submit">이름 변경</button>
+                      </form>
+                      <span class="tab-status"
+                            th:classappend="${hasBg} ? ' is-on' : ' is-off'"
+                            th:text="${hasBg ? bgName : '이미지 없음'}">
+                        적용 파일명
                       </span>
                     </div>
-                    <button class="btn btn--small" type="submit">적용</button>
-                  </form>
-                  <form th:if="${hasBg}"
-                        class="tab-icon-form"
-                        th:action="@{|/dashboard/manage/tabs/${t.id}/background/remove|}" method="post">
-                    <button class="btn btn--small btn--ghost" type="submit" aria-label="탭 배경 제거" title="배경 이미지 끄기">배경 해제</button>
-                  </form>
-                  <form class="tab-delete-form" th:action="@{|/dashboard/tabs/${t.id}/delete|}" method="post">
-                    <button class="btn btn--small btn--danger" type="submit" aria-label="탭 삭제">탭 삭제</button>
-                  </form>
+                    <div class="tab-row-actions">
+                      <form class="tab-upload-form" th:action="@{|/dashboard/manage/tabs/${t.id}/background|}" method="post" enctype="multipart/form-data">
+                        <div class="filepick filepick--compact">
+                          <input class="filepick__input" th:id="|tabBg-${t.id}|" type="file" name="backgroundImage" accept="image/*" required/>
+                          <label class="filepick__btn" th:for="|tabBg-${t.id}|">파일 선택</label>
+                          <span class="filepick__name"
+                                th:attr="data-empty-label=${bgName}"
+                                th:text="${bgName}">
+                            이미지 없음
+                          </span>
+                        </div>
+                        <button class="btn btn--small" type="submit">적용</button>
+                      </form>
+                      <form th:if="${hasBg}"
+                            class="tab-icon-form"
+                            th:action="@{|/dashboard/manage/tabs/${t.id}/background/remove|}" method="post">
+                        <button class="btn btn--small btn--ghost" type="submit" aria-label="탭 배경 제거" title="배경 이미지 끄기">배경 해제</button>
+                      </form>
+                      <form class="tab-delete-form" th:action="@{|/dashboard/tabs/${t.id}/delete|}" method="post">
+                        <button class="btn btn--small btn--danger" type="submit" aria-label="탭 삭제">탭 삭제</button>
+                      </form>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -187,11 +211,22 @@
               <div class="mini__head">카테고리</div>
               <div class="mini__body">
                 <div class="empty" th:if="${categories == null or #lists.isEmpty(categories)}">없음</div>
-                <div class="chip chip--list" th:each="c : ${categories}">
-                  <span th:text="${c.name}">Media</span>
-                  <form th:action="@{|/dashboard/categories/${c.id}/delete|}" method="post">
-                    <button class="x" type="submit" aria-label="카테고리 삭제">×</button>
-                  </form>
+                <div class="group" th:each="t : ${tabs}">
+                  <div class="group__title" th:text="${t.name}">탭명</div>
+                  <div class="sortlist"
+                       data-sort-type="categories"
+                       data-sort-endpoint="/dashboard/manage/reorder/categories"
+                       th:attr="data-parent-id=${t.id}">
+                    <div class="chip chip--list sortitem" th:each="c : ${t.categories}" th:attr="data-id=${c.id}">
+                      <button class="sort-handle" type="button" aria-label="카테고리 순서 이동">::</button>
+                      <span th:text="${c.name}">Media</span>
+                      <div class="chip__actions">
+                        <form th:action="@{|/dashboard/categories/${c.id}/delete|}" method="post">
+                          <button class="x" type="submit" aria-label="카테고리 삭제">×</button>
+                        </form>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -200,16 +235,34 @@
               <div class="mini__head">링크</div>
               <div class="mini__body">
                 <div class="empty" th:if="${links == null or #lists.isEmpty(links)}">없음</div>
-
-                <div class="linkrow" th:each="l : ${links}">
-                  <div class="linkrow__main">
-                    <div class="mono" th:text="${l.name}">NPM</div>
-                    <a class="url mono" th:href="${l.url}" th:text="${l.url}" target="_blank" rel="noreferrer">https://</a>
+                <th:block th:each="t : ${tabs}">
+                  <div class="group" th:each="c : ${t.categories}">
+                    <div class="group__title">
+                      <span th:text="${t.name}">탭</span>
+                      <span>/</span>
+                      <span th:text="${c.name}">카테고리</span>
+                    </div>
+                    <div class="sortlist"
+                         data-sort-type="links"
+                         data-sort-endpoint="/dashboard/manage/reorder/links"
+                         th:attr="data-parent-id=${c.id}">
+                      <div class="linkrow sortitem"
+                           th:each="l : ${c.links}"
+                           th:attr="data-id=${l.id},data-category-id=${c.id},data-link-name=${l.name},data-link-url=${l.url}">
+                        <button class="sort-handle" type="button" aria-label="링크 순서 이동">::</button>
+                        <div class="linkrow__main">
+                          <div class="mono" th:text="${l.name}">NPM</div>
+                          <a class="url mono" th:href="${l.url}" th:text="${l.url}" target="_blank" rel="noreferrer">https://</a>
+                        </div>
+                        <div class="linkrow__actions">
+                          <form th:action="@{|/dashboard/links/${l.id}/delete|}" method="post">
+                            <button class="btn btn--small btn--danger" type="submit">삭제</button>
+                          </form>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <form th:action="@{|/dashboard/links/${l.id}/delete|}" method="post">
-                    <button class="btn btn--small btn--danger" type="submit">삭제</button>
-                  </form>
-                </div>
+                </th:block>
               </div>
             </div>
           </div>

@@ -1,4 +1,5 @@
 // Statusbar component for tab navigation and widgets
+
 class Statusbar extends Component {
   externalRefs = {};
 

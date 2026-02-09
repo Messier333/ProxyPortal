@@ -19,23 +19,29 @@ try {
 const injectedTabs = Array.isArray(injected.tabs) ? injected.tabs : [];
 
 function normalizeTabs(tabs) {
-  return tabs.map((t) => ({
-    name: t.name,
-    background_url: t.background_url,
-    categories: (t.categories ?? []).map((c) => ({
-      name: c.name,
-      links: (c.links ?? [])
+  return (tabs ?? [])
+    .slice()
+    .sort((a, b) => (a.sort_order ?? a.sortOrder ?? 0) - (b.sort_order ?? b.sortOrder ?? 0))
+    .map((t) => ({
+      name: t.name,
+      background_url: t.background_url ?? t.backgroundUrl,
+      categories: (t.categories ?? [])
         .slice()
-        .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
-        .map((l) => ({
-          name: l.name,
-          url: l.url,
-          icon: l.icon,
-          icon_color: l.icon_color, // 서버가 hex("#a6e3a1") 주면 그대로 사용
-          sort_order: l.sort_order,
+        .sort((a, b) => (a.sort_order ?? a.sortOrder ?? 0) - (b.sort_order ?? b.sortOrder ?? 0))
+        .map((c) => ({
+          name: c.name,
+          links: (c.links ?? [])
+            .slice()
+            .sort((a, b) => (a.sort_order ?? a.sortOrder ?? 0) - (b.sort_order ?? b.sortOrder ?? 0))
+            .map((l) => ({
+              name: l.name,
+              url: l.url,
+              icon: l.icon,
+              icon_color: l.icon_color ?? l.iconColor,
+              sort_order: l.sort_order ?? l.sortOrder,
+            })),
         })),
-    })),
-  }));
+    }));
 }
 
 const default_configuration = {
