@@ -64,7 +64,7 @@ class Statusbar extends Component {
       }
       #tabs ul li:not(:last-child) {
         width: 35px; text-align: center;
-        font: 700 13px 'Yu Gothic', serif;
+        font: 300 12px 'Roboto', sans-serif;
         color: ${CONFIG.palette.text};
         padding: 6px 0; transition: all .1s;
         cursor: pointer; line-height: 0; height: 100%;
