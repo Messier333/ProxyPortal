@@ -1,13 +1,13 @@
 <!doctype html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
-  <th:block th:replace="dashboard/fragments/head :: head('Dashboard • 메인')"></th:block>
+  <th:block th:replace="~{dashboard/fragments/head :: head('Dashboard • 메인')}"></th:block>
 
   <body class="app">
-    <th:block th:replace="dashboard/fragments/sidebar :: sidebar('home')"></th:block>
+    <th:block th:replace="~{dashboard/fragments/sidebar :: sidebar('home')}"></th:block>
 
     <main class="main" id="main">
-      <th:block th:replace="dashboard/fragments/topbar :: topbar('메인')"></th:block>
-      <th:block th:replace="dashboard/fragments/toast :: toast"></th:block>
+      <th:block th:replace="~{dashboard/fragments/topbar :: topbar('메인')}"></th:block>
+      <th:block th:replace="~{dashboard/fragments/toast :: toast}"></th:block>
 
       <section class="grid">
         <article class="card">

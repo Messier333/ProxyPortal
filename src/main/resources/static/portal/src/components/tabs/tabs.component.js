@@ -48,10 +48,10 @@ class Category extends Component {
 
   static getBackgroundStyle(url) {
     if (!url) {
-      return `style="background-image: none;"`;
+      return `style="--tab-bg: none;"`;
     }
 
-    return `style="background-image: url('${url}'); background-repeat: no-repeat; background-size: cover; background-position: center;"`;
+    return `style="--tab-bg: url('${url}');"`;
   }
 
   static getAll(tabs) {
@@ -161,7 +161,10 @@ class Tabs extends Component {
         height: 100%;
         position: relative;
         flex: 0 0 30%;
-        background: transparent;
+        background-image: var(--tab-bg);
+        background-repeat: no-repeat;
+        background-size: cover;
+        background-position: center center;
       }
 
       .categories ul .links {
@@ -316,6 +319,7 @@ class Tabs extends Component {
         0% { opacity: 0; }
         100% { opacity: 1; }
       }
+
     `;
   }
 
