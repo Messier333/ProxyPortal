@@ -1,9 +1,5 @@
 package com.messier333.proxyportal.security.config;
 
-import com.messier333.proxyportal.user.service.CustomUserDetailService;
-
-import lombok.RequiredArgsConstructor;
-
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -11,6 +7,10 @@ import org.springframework.security.config.annotation.web.configurers.HeadersCon
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+
+import com.messier333.proxyportal.user.service.CustomUserDetailService;
+
+import lombok.RequiredArgsConstructor;
 
 @Configuration
 @RequiredArgsConstructor
@@ -24,7 +24,7 @@ public class SecurityConfig {
         http
                 .userDetailsService(customUserDetailService)
                 .authorizeHttpRequests(auth -> auth
-                                .requestMatchers("/login", "/error").permitAll()
+                                .requestMatchers("/login","/login/**", "/error").permitAll()
                                 .requestMatchers("/admin/**", "/api/admin/**").hasRole("ADMIN")
                                 .anyRequest().authenticated()
                 )

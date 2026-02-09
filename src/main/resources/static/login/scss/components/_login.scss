@@ -1,0 +1,149 @@
+/*=============== LOGIN ===============*/
+.login{
+   position: relative;
+   height: 100vh;
+   display: grid;
+   align-items: center;
+   overflow: hidden;
+
+   &__ambient{
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: transparent;
+   }
+   &__form{
+      position: relative;
+      z-index: 1;
+      background-color: var(--surface-color);
+      margin-inline: 1.5rem;
+      padding: 2.5rem 1.5rem;
+      border-radius: 1rem;
+      backdrop-filter: none;
+      box-shadow:
+         0 20px 45px -22px var(--shadow-color),
+         0 12px 24px -18px var(--shadow-color),
+         inset 0 1px 0 rgba(255, 255, 255, .03);
+   }
+   &__title{
+      text-align: center;
+      font-size: var(--h1-font-size);
+      font-weight: var(--font-medium);
+      margin-bottom: 2rem;
+   }
+   &__content,
+   &__box{
+      display: grid;
+   }
+   &__content{
+      row-gap: 1.75rem;
+      margin-bottom: 1.5rem;
+   }
+   &__box{
+      grid-template-columns: max-content 1fr ;
+      align-items: center;
+      column-gap: .75rem;
+      background-color: rgba(0, 0, 0, .08);
+      border-radius: .65rem;
+      padding-inline: .75rem;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .04);
+   }
+   &__icon,
+   &__eye{
+      font-size: 1.25rem;
+      color: var(--muted-text-color);
+   }
+   &__input{
+      width: 100%;
+      padding-block: .8rem;
+      background: none;
+      color: var(--text-color);
+      position: relative;
+      z-index: 1;
+   }
+   &__box-input{
+      position: relative;
+   }
+   &__label{
+      position: absolute;
+      left: 0;
+      top: 13px;
+      font-weight: var(--font-medium);
+      color: var(--muted-text-color);
+      transition: top .3s, font-size .3s;
+   }
+   &__eye{
+      position: absolute;
+      right: 0;
+      top: 18px;
+      z-index: 10;
+      cursor: pointer;
+   }
+   &__box:nth-child(2) input{
+      padding-right: 1.8rem;
+   }
+   &__check,
+   &__check-group{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+   }
+   &__check{
+      margin-bottom: 1.5rem;
+   }
+   &__check-label,
+   &__forgot,
+   &__register{
+      font-size: var(--small-font-size);
+   }
+   &__check-group{
+      column-gap: .5rem;
+   }
+   &__check-input{
+      width: 16px;
+      height: 16px;
+   }
+   &__forgot{
+      color: var(--muted-text-color);
+
+      &:hover{
+         color: var(--accent-color);
+         text-decoration: underline;
+      }
+   }
+   &__button{
+      width: 100%;
+      padding: 1rem;
+      border-radius: .5rem;
+      background: linear-gradient(135deg, var(--accent-alt-color) 0%, var(--accent-color) 100%);
+      color: var(--black-color);
+      font-weight: var(--font-medium);
+      cursor: pointer;
+      margin-bottom: 2rem;
+      box-shadow: 0 14px 30px -18px rgba(137, 180, 250, .7);
+   }
+   &__register{
+      text-align: center;
+
+      & a{
+         color: var(--accent-color);
+         font-weight: var(--font-medium);
+
+         &:hover{
+            text-decoration: underline;
+         }
+      }
+   }
+}
+
+/* Input focus move up label */
+.login__input:focus + .login__label{
+   top: -12px;
+   font-size: var(--small-font-size);
+}
+
+/* Input focus sticky top label */
+.login__input:not(:placeholder-shown).login__input:not(:focus) + .login__label{
+   top: -12px;
+   font-size: var(--small-font-size);
+}

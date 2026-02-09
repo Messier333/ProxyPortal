@@ -1,106 +1,57 @@
-<!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@2.5.0/fonts/remixicon.css" rel="stylesheet">
+  <link rel="stylesheet" th:href="@{/login/css/styles.css}" href="/login/css/styles.css">
+
   <title>Login</title>
-
-  <style>
-    :root {
-      --base: #1e1e2e;
-      --mantle: #181825;
-      --surface0: #313244;
-      --text: #cdd6f4;
-      --subtext: #bac2de;
-      --blue: #89b4fa;
-      --red: #f38ba8;
-    }
-
-    body {
-      margin: 0;
-      height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      background: var(--base);
-      font-family: 'Inter', 'Roboto', sans-serif;
-      color: var(--text);
-    }
-
-    .login-card {
-      width: 360px;
-      background: var(--mantle);
-      padding: 32px;
-      border-radius: 14px;
-      box-shadow: 0 20px 40px rgba(0,0,0,.4);
-    }
-
-    h1 {
-      margin-bottom: 24px;
-      font-size: 22px;
-      text-align: center;
-    }
-
-    label {
-      font-size: 12px;
-      color: var(--subtext);
-    }
-
-    input {
-      width: 100%;
-      margin-top: 6px;
-      margin-bottom: 16px;
-      padding: 10px 12px;
-      background: var(--surface0);
-      border: 1px solid transparent;
-      border-radius: 8px;
-      color: var(--text);
-      box-sizing: border-box;
-    }
-
-    input:focus {
-      outline: none;
-      border-color: var(--blue);
-    }
-
-    button {
-      width: 100%;
-      padding: 12px;
-      background: var(--blue);
-      color: var(--base);
-      border: none;
-      border-radius: 10px;
-      font-weight: 600;
-      cursor: pointer;
-    }
-
-    button:hover {
-      filter: brightness(1.1);
-    }
-
-    .error {
-      color: var(--red);
-      font-size: 12px;
-      margin-top: 10px;
-      text-align: center;
-    }
-  </style>
 </head>
-
 <body>
-  <form class="login-card" th:action="@{/login}" method="post">
-    <h1>Sign in</h1>
+  <div class="login">
+    <div class="login__ambient" aria-hidden="true"></div>
 
-    <label>Username</label>
-    <input type="text" name="username" required />
+    <form class="login__form" th:action="@{/login}" method="post">
+      <h1 class="login__title">Login</h1>
 
-    <label>Password</label>
-    <input type="password" name="password" required />
+      <p class="login__message" th:if="${loginMessage}" th:text="${loginMessage}"></p>
 
-    <button type="submit">Login</button>
+      <div class="login__content">
+        <div class="login__box">
+          <i class="ri-user-3-line login__icon"></i>
 
-    <div class="error" th:if="${param.error}">
-      Invalid username or password
-    </div>
-  </form>
+          <div class="login__box-input">
+            <input type="text" required class="login__input" id="login-username" name="username" placeholder=" ">
+            <label for="login-username" class="login__label">Username</label>
+          </div>
+        </div>
+
+        <div class="login__box">
+          <i class="ri-lock-2-line login__icon"></i>
+
+          <div class="login__box-input">
+            <input type="password" required class="login__input" id="login-pass" name="password" placeholder=" ">
+            <label for="login-pass" class="login__label">Password</label>
+            <i class="ri-eye-off-line login__eye" id="login-eye"></i>
+          </div>
+        </div>
+      </div>
+
+      <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+
+      <div class="login__check">
+        <div class="login__check-group">
+          <input type="checkbox" class="login__check-input" id="login-check" name="remember-me">
+          <label for="login-check" class="login__check-label">Remember me</label>
+        </div>
+      </div>
+
+      <button type="submit" class="login__button">Login</button>
+    </form>
+  </div>
+
+  <script th:src="@{/login/js/main.js}" src="/login/js/main.js"></script>
 </body>
 </html>
