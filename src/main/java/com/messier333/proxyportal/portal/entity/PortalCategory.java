@@ -53,11 +53,6 @@ public class PortalCategory {
         return category;
     }
 
-    public void update(String name, int sortOrder) {
-        this.name = name;
-        this.sortOrder = sortOrder;
-    }
-
     public void setSortOrder(int sortOrder) {
         this.sortOrder = sortOrder;
     }

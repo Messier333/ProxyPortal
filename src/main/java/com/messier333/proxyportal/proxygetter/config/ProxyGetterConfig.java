@@ -6,7 +6,7 @@ import org.springframework.web.client.RestClient;
 
 @Configuration
 public class ProxyGetterConfig {
-    @SuppressWarnings({"null", "unused"})
+    @SuppressWarnings("null")
     @Bean
     RestClient npmRestClient(NpmProperties props) {
         return RestClient.builder()

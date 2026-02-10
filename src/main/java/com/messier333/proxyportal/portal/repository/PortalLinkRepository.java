@@ -8,10 +8,9 @@ import java.util.List;
 import java.util.Optional;
 
 public interface PortalLinkRepository extends JpaRepository<PortalLink, Long> {
-    long countByCategoryId(Long categoryId);
     boolean existsByCategoryIdAndNameIgnoreCase(Long categoryId, String name);
     boolean existsByCategoryIdAndUrlIgnoreCase(Long categoryId, String url);
     List<PortalLink> findAllByCategoryIdOrderBySortOrderAscIdAsc(Long categoryId);
     Optional<PortalLink> findByIdAndCategoryTabUserUsername(Long id, String username);
-    long deleteByCategoryTabUserUsername(String username);
+    void deleteByCategoryTabUserUsername(String username);
 }

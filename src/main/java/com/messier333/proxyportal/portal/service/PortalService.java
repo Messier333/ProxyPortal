@@ -1,5 +1,6 @@
 package com.messier333.proxyportal.portal.service;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -7,10 +8,12 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
+import java.util.Locale;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -21,6 +24,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.messier333.proxyportal.common.exception.BadRequestException;
 import com.messier333.proxyportal.common.exception.ConflictException;
 import com.messier333.proxyportal.common.exception.NotFoundException;
+import com.messier333.proxyportal.common.util.ImageType;
 import com.messier333.proxyportal.portal.dto.request.CategoryCreateRequest;
 import com.messier333.proxyportal.portal.dto.request.LinkCreateRequest;
 import com.messier333.proxyportal.portal.dto.request.TabCreateRequest;
@@ -56,9 +60,6 @@ public class PortalService {
 
     public PortalTabsResponse getPortalTabs(String username) {
         return portalQueryRepository.findTabsByUsername(username);
-    }
-
-    public void getCategories(){
     }
 
 
@@ -98,11 +99,6 @@ public class PortalService {
         PortalTab tab = portalTabRepository.findByIdAndUserUsername(tabId, username)
                 .orElseThrow(() -> new NotFoundException("tab not found or user not matched"));
 
-        String contentType = backgroundImage.getContentType();
-        if (contentType == null || !contentType.startsWith("image/")) {
-            throw new BadRequestException("Only image files are allowed");
-        }
-
         String safeUsername = username.replaceAll("[^a-zA-Z0-9_-]", "_");
         String safeTabName = sanitizeFolderName(tab.getName(), "tab-" + tab.getId());
         Path uploadDir = resolveUploadRoot()
@@ -110,22 +106,29 @@ public class PortalService {
                 .resolve(safeUsername)
                 .resolve(safeTabName)
                 .normalize();
-        String filename = sanitizeOriginalFilename(backgroundImage.getOriginalFilename());
-        Path target = uploadDir.resolve(filename).normalize();
+        String originalFilename = backgroundImage.getOriginalFilename();
+        String filename = sanitizeOriginalFilename(originalFilename);
 
-        if (!target.startsWith(uploadDir)) {
-            throw new BadRequestException("Invalid file path");
-        }
+        Path target;
+        String storedFilename;
+        try (BufferedInputStream input = new BufferedInputStream(backgroundImage.getInputStream())) {
+            ImageType detected = validateUploadImage(filename, input);
+            String resolvedFilename = ensureFilenameExtension(filename, detected);
+            target = resolveUniqueUploadPath(uploadDir, resolvedFilename);
+            storedFilename = target.getFileName().toString();
 
-        try {
+            if (!target.startsWith(uploadDir)) {
+                throw new BadRequestException("Invalid file path");
+            }
+
             Files.createDirectories(uploadDir);
-            Files.copy(backgroundImage.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
+            Files.copy(input, target, StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
             throw new IllegalStateException("Failed to store uploaded image", e);
         }
 
         deleteBackgroundIfManaged(tab.getBackgroundUrl());
-        tab.setBackgroundUrl(TAB_UPLOAD_PATH + safeUsername + "/" + safeTabName + "/" + filename);
+        tab.setBackgroundUrl(TAB_UPLOAD_PATH + safeUsername + "/" + safeTabName + "/" + storedFilename);
         portalTabRepository.save(tab);
     }
 
@@ -189,6 +192,54 @@ public class PortalService {
         if (name == null || name.isBlank()) return fallback;
         String safe = name.trim().replaceAll("[\\\\/:*?\"<>|]", "_");
         return safe.isBlank() ? fallback : safe;
+    }
+
+    private ImageType validateUploadImage(String filename, BufferedInputStream input) throws IOException {
+        String extension = ImageType.extractExtension(filename);
+        input.mark(ImageType.maxHeaderLength());
+        byte[] header = new byte[ImageType.maxHeaderLength()];
+        int read = input.read(header);
+        input.reset();
+        if (read <= 0) {
+            throw new BadRequestException("Only image files are allowed");
+        }
+        ImageType detected = ImageType.detect(header, read);
+        if (detected == null) {
+            throw new BadRequestException("Only image files are allowed");
+        }
+        if (extension != null && !detected.matchesExtension(extension)) {
+            throw new BadRequestException("Only image files are allowed");
+        }
+        return detected;
+    }
+
+    private String ensureFilenameExtension(String filename, ImageType detected) {
+        if (ImageType.extractExtension(filename) != null) {
+            return filename;
+        }
+        return filename + "." + detected.defaultExtension();
+    }
+
+    private Path resolveUniqueUploadPath(Path uploadDir, String filename) {
+        Path target = uploadDir.resolve(filename).normalize();
+        if (!Files.exists(target)) {
+            return target;
+        }
+        String baseName = filename;
+        String extension = "";
+        int dotIndex = filename.lastIndexOf('.');
+        if (dotIndex > 0 && dotIndex < filename.length() - 1) {
+            baseName = filename.substring(0, dotIndex);
+            extension = filename.substring(dotIndex);
+        }
+        for (int i = 1; i <= 1000; i++) {
+            String candidate = baseName + "-" + i + extension;
+            Path candidatePath = uploadDir.resolve(candidate).normalize();
+            if (!Files.exists(candidatePath)) {
+                return candidatePath;
+            }
+        }
+        throw new IllegalStateException("Failed to resolve unique upload path");
     }
 
     private void moveTabFolderIfNeeded(String username, String oldTabName, String newTabName, PortalTab tab) {
@@ -282,12 +333,14 @@ public class PortalService {
     }
 
     @Transactional
-    public LinkResponse createLink (String username, Long categoryId, LinkCreateRequest linkCreateRequest) {
+    public LinkResponse createLink(String username, Long categoryId, LinkCreateRequest linkCreateRequest) {
         PortalCategory portalCategory = portalCategoryRepository.findByIdAndTabUserUsername(categoryId, username).orElseThrow(
                 () -> new NotFoundException("category not found or user not matched")
         );
         String linkName = normalizeName(linkCreateRequest.name(), "link name");
         String linkUrl = normalizeUrl(linkCreateRequest.url());
+        String normalizedIcon = normalizeIcon(linkCreateRequest.icon());
+        String normalizedIconColor = normalizeIconColor(linkCreateRequest.iconColor());
         if (portalLinkRepository.existsByCategoryIdAndNameIgnoreCase(categoryId, linkName)) {
             throw new ConflictException("이미 같은 이름의 링크가 있습니다.");
         }
@@ -299,8 +352,8 @@ public class PortalService {
                 portalCategory,
                 linkName,
                 linkUrl,
-                linkCreateRequest.icon(),
-                linkCreateRequest.iconColor(),
+                normalizedIcon,
+                normalizedIconColor,
                 nextSortOrder
         );
         Objects.requireNonNull(portalLink, "portalLink must not be null");
@@ -320,6 +373,19 @@ public class PortalService {
     }
 
     @Transactional
+    public LinkResponse createLink(String username, Long categoryId, String name, String url, String icon, String iconColor, Integer sortOrder) {
+        String normalizedUrl = normalizeUrl(url);
+        LinkCreateRequest request = new LinkCreateRequest(
+                name,
+                normalizedUrl,
+                normalizeIcon(icon),
+                normalizeIconColor(iconColor),
+                sortOrder
+        );
+        return createLink(username, categoryId, request);
+    }
+
+    @Transactional
     public LinkResponse createLink(String username, Long categoryId, String name, String url) {
         return createLink(username, categoryId, name, url, null, null, null);
     }
@@ -329,25 +395,13 @@ public class PortalService {
         return createLink(username, categoryId, name, url, icon, iconColor, null);
     }
 
-    @Transactional
-    public LinkResponse createLink(String username, Long categoryId, String name, String url, String icon, String iconColor, Integer sortOrder) {
-        String normalizedUrl = normalizeUrl(url);
-        LinkCreateRequest request = new LinkCreateRequest(
-                name,
-                normalizedUrl,
-                normalizeIcon(icon, DEFAULT_LINK_ICON),
-                normalizeIconColor(iconColor, DEFAULT_LINK_ICON_COLOR),
-                sortOrder
-        );
-        return createLink(username, categoryId, request);
-    }
-
+    @SuppressWarnings("null")
     @Transactional
     public CategoryResponse addCategorytoTab(String username, Long tabId, Long categoryId){
         PortalCategory portalCategory = portalCategoryRepository.findByIdAndTabUserUsername(categoryId,username).orElseThrow(
                 () -> new NotFoundException("category not found or user not matched")
         );
-        portalCategory.setCategoryTab(portalTabRepository.findById(tabId).orElseThrow(
+        portalCategory.setCategoryTab(portalTabRepository.findByIdAndUserUsername(tabId, username).orElseThrow(
                 () -> new NotFoundException("tab not found or user not matched")
         ));
         return new CategoryResponse(
@@ -435,12 +489,16 @@ public class PortalService {
     public void reorderTabsByIds(String username, List<Long> orderedTabIds) {
         List<PortalTab> siblings = new ArrayList<>(portalTabRepository.findAllByUserUsernameOrderBySortOrderAscIdAsc(username));
         validateReorderIds(siblings.stream().map(PortalTab::getId).toList(), orderedTabIds, "tabs");
+        HashMap<Long, PortalTab> siblingsById = new HashMap<>();
+        for (PortalTab tab : siblings) {
+            siblingsById.put(tab.getId(), tab);
+        }
         for (int i = 0; i < orderedTabIds.size(); i++) {
             Long targetId = orderedTabIds.get(i);
-            PortalTab target = siblings.stream()
-                    .filter(tab -> tab.getId().equals(targetId))
-                    .findFirst()
-                    .orElseThrow(() -> new NotFoundException("tab not found"));
+            PortalTab target = siblingsById.get(targetId);
+            if (target == null) {
+                throw new NotFoundException("tab not found");
+            }
             target.setSortOrder(i + 1);
         }
     }
@@ -451,12 +509,16 @@ public class PortalService {
                 .orElseThrow(() -> new NotFoundException("tab not found or user not matched"));
         List<PortalCategory> siblings = new ArrayList<>(portalCategoryRepository.findAllByTabIdOrderBySortOrderAscIdAsc(tabId));
         validateReorderIds(siblings.stream().map(PortalCategory::getId).toList(), orderedCategoryIds, "categories");
+        HashMap<Long, PortalCategory> siblingsById = new HashMap<>();
+        for (PortalCategory category : siblings) {
+            siblingsById.put(category.getId(), category);
+        }
         for (int i = 0; i < orderedCategoryIds.size(); i++) {
             Long targetId = orderedCategoryIds.get(i);
-            PortalCategory target = siblings.stream()
-                    .filter(category -> category.getId().equals(targetId))
-                    .findFirst()
-                    .orElseThrow(() -> new NotFoundException("category not found"));
+            PortalCategory target = siblingsById.get(targetId);
+            if (target == null) {
+                throw new NotFoundException("category not found");
+            }
             target.setSortOrder(i + 1);
         }
     }
@@ -467,12 +529,16 @@ public class PortalService {
                 .orElseThrow(() -> new NotFoundException("category not found or user not matched"));
         List<PortalLink> siblings = new ArrayList<>(portalLinkRepository.findAllByCategoryIdOrderBySortOrderAscIdAsc(categoryId));
         validateReorderIds(siblings.stream().map(PortalLink::getId).toList(), orderedLinkIds, "links");
+        HashMap<Long, PortalLink> siblingsById = new HashMap<>();
+        for (PortalLink link : siblings) {
+            siblingsById.put(link.getId(), link);
+        }
         for (int i = 0; i < orderedLinkIds.size(); i++) {
             Long targetId = orderedLinkIds.get(i);
-            PortalLink target = siblings.stream()
-                    .filter(link -> link.getId().equals(targetId))
-                    .findFirst()
-                    .orElseThrow(() -> new NotFoundException("link not found"));
+            PortalLink target = siblingsById.get(targetId);
+            if (target == null) {
+                throw new NotFoundException("link not found");
+            }
             target.setSortOrder(i + 1);
         }
     }
@@ -605,6 +671,20 @@ public class PortalService {
         if (trimmed.isBlank()) {
             throw new BadRequestException("url must not be blank");
         }
+        if (trimmed.startsWith("//")) {
+            return "https:" + trimmed;
+        }
+        String lower = trimmed.toLowerCase(Locale.ROOT);
+        if (lower.startsWith("javascript:") || lower.startsWith("data:") || lower.startsWith("vbscript:")) {
+            throw new BadRequestException("invalid url scheme");
+        }
+        boolean hasScheme = trimmed.matches("^[a-zA-Z][a-zA-Z0-9+.-]*:.*");
+        if (hasScheme) {
+            if (lower.startsWith("http://") || lower.startsWith("https://")) {
+                return trimmed;
+            }
+            throw new BadRequestException("only http/https urls are allowed");
+        }
         if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
             return trimmed;
         }
@@ -622,16 +702,16 @@ public class PortalService {
         return trimmed;
     }
 
-    private String normalizeIcon(String icon, String fallback) {
-        if (icon == null) return fallback;
+    private String normalizeIcon(String icon) {
+        if (icon == null) return PortalService.DEFAULT_LINK_ICON;
         String trimmed = icon.trim();
-        return trimmed.isBlank() ? fallback : trimmed;
+        return trimmed.isBlank() ? PortalService.DEFAULT_LINK_ICON : trimmed;
     }
 
-    private String normalizeIconColor(String iconColor, String fallback) {
-        if (iconColor == null) return fallback;
+    private String normalizeIconColor(String iconColor) {
+        if (iconColor == null) return PortalService.DEFAULT_LINK_ICON_COLOR;
         String trimmed = iconColor.trim();
-        return trimmed.isBlank() ? fallback : trimmed;
+        return trimmed.isBlank() ? PortalService.DEFAULT_LINK_ICON_COLOR : trimmed;
     }
 
 }

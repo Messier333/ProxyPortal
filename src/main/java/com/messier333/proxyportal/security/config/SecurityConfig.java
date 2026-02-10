@@ -24,7 +24,7 @@ public class SecurityConfig {
         http
                 .userDetailsService(customUserDetailService)
                 .authorizeHttpRequests(auth -> auth
-                                .requestMatchers("/login","/login/**", "/error").permitAll()
+                                .requestMatchers("/login", "/login/**", "/setup", "/setup/**", "/error").permitAll()
                                 .requestMatchers("/admin/**", "/api/admin/**").hasRole("ADMIN")
                                 .requestMatchers("/dashboard/account/**").hasRole("ADMIN")
                                 .anyRequest().authenticated()
@@ -41,9 +41,6 @@ public class SecurityConfig {
                 )
                 .headers(headers -> headers
                         .frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin)
-                )
-                .csrf(csrf -> csrf
-                        .ignoringRequestMatchers("/h2-console/**")
                 );
         return http.build();
     }
