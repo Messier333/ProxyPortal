@@ -26,14 +26,17 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                                 .requestMatchers("/login","/login/**", "/error").permitAll()
                                 .requestMatchers("/admin/**", "/api/admin/**").hasRole("ADMIN")
+                                .requestMatchers("/dashboard/account/**").hasRole("ADMIN")
                                 .anyRequest().authenticated()
                 )
                 .formLogin(form -> form
                                 .loginPage("/login")
+                                .failureUrl("/login?error")
                                 .permitAll()
                 )
                 .logout(logout -> logout
                                 .logoutUrl("/logout")
+                                .logoutSuccessUrl("/login?logout")
                                 .permitAll()
                 )
                 .headers(headers -> headers

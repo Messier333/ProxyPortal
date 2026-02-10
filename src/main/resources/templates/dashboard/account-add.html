@@ -1,46 +1,103 @@
 <!doctype html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
-  <th:block th:replace="~{dashboard/fragments/head :: head('Dashboard • 계정 추가')}"></th:block>
+  <th:block th:replace="~{dashboard/fragments/head :: head('Dashboard • 계정 관리')}"></th:block>
 
   <body class="app">
     <th:block th:replace="~{dashboard/fragments/sidebar :: sidebar('account')}"></th:block>
 
     <main class="main" id="main">
-      <th:block th:replace="~{dashboard/fragments/topbar :: topbar('계정 추가')}"></th:block>
+      <th:block th:replace="~{dashboard/fragments/topbar :: topbar('계정 관리')}"></th:block>
       <th:block th:replace="~{dashboard/fragments/toast :: toast}"></th:block>
+      <div id="serverToastMessage" th:if="${toastMessage != null}" th:attr="data-message=${toastMessage}" hidden></div>
 
       <section class="grid">
-        <article class="card card--full">
+        <article class="card">
           <div class="card__head">
-            <h2>NPM 계정 등록</h2>
-            <div class="hint">예: Nginx Proxy Manager API 로그인 정보</div>
+            <h2>계정 추가</h2>
+            <div class="hint">일반 사용자(USER) 또는 관리자(ADMIN) 계정을 생성합니다.</div>
           </div>
 
-          <form class="form" th:action="@{/dashboard/account}" method="post">
+          <form class="form" th:action="@{/dashboard/account/users}" method="post">
             <label class="field">
-              <span class="field__label">별칭(표시 이름)</span>
-              <input class="input" name="alias" placeholder="예: my-npm" required/>
+              <span class="field__label">아이디(username)</span>
+              <input class="input" name="username" placeholder="예: user01" required/>
             </label>
 
             <label class="field">
-              <span class="field__label">NPM URL</span>
-              <input class="input mono" name="baseUrl" placeholder="http://192.168.1.10:81" required/>
+              <span class="field__label">권한(role)</span>
+              <select class="select" name="role" required>
+                <option value="USER" selected>USER (일반)</option>
+                <option value="ADMIN">ADMIN (관리자)</option>
+              </select>
             </label>
 
-            <div class="row2">
-              <label class="field">
-                <span class="field__label">이메일</span>
-                <input class="input" name="email" placeholder="admin@example.com" required/>
-              </label>
+            <label class="field">
+              <span class="field__label">비밀번호</span>
+              <input class="input" type="password" name="password" placeholder="최소 4자" required/>
+            </label>
 
-              <label class="field">
-                <span class="field__label">비밀번호</span>
-                <input class="input" type="password" name="password" placeholder="••••••••" required/>
-              </label>
+            <button class="btn" type="submit">계정 생성</button>
+          </form>
+        </article>
+
+        <article class="card">
+          <div class="card__head">
+            <h2>비밀번호 변경</h2>
+            <div class="hint">선택한 계정의 비밀번호를 새 값으로 변경합니다.</div>
+          </div>
+
+          <form class="form" th:action="@{/dashboard/account/password}" method="post">
+            <label class="field">
+              <span class="field__label">계정 선택</span>
+              <select class="select" name="username" required>
+                <option value="" disabled selected>계정을 선택하세요</option>
+                <option th:each="u : ${users}"
+                        th:value="${u.username}"
+                        th:text="|${u.username} (${u.role})|">
+                  admin (ADMIN)
+                </option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span class="field__label">새 비밀번호</span>
+              <input class="input" type="password" name="newPassword" placeholder="최소 4자" required/>
+            </label>
+
+            <button class="btn" type="submit">비밀번호 변경</button>
+          </form>
+        </article>
+
+        <article class="card card--full">
+          <div class="card__head">
+            <h2>현재 계정 목록</h2>
+          </div>
+
+          <div class="table">
+            <div class="empty" th:if="${users == null or #lists.isEmpty(users)}">등록된 계정이 없습니다.</div>
+
+            <div class="row row--head" th:if="${users != null and !#lists.isEmpty(users)}">
+              <div>ID</div>
+              <div>아이디</div>
+              <div>권한</div>
+              <div>관리</div>
             </div>
 
-            <button class="btn" type="submit">계정 저장</button>
-          </form>
+            <div class="row" th:each="u : ${users}">
+              <div class="mono" th:text="${u.id}">1</div>
+              <div class="mono" th:text="${u.username}">admin</div>
+              <div th:text="${u.role}">ADMIN</div>
+              <div>
+                <form th:if="${u.username != currentUsername}"
+                      th:action="@{/dashboard/account/delete}" method="post"
+                      onsubmit="return confirm('정말 이 계정을 삭제하시겠습니까? 관련 포털 데이터도 함께 삭제됩니다.');">
+                  <input type="hidden" name="username" th:value="${u.username}">
+                  <button class="btn btn--small btn--danger" type="submit">계정 삭제</button>
+                </form>
+                <span class="hint" th:if="${u.username == currentUsername}">현재 로그인 계정</span>
+              </div>
+            </div>
+          </div>
         </article>
       </section>
     </main>

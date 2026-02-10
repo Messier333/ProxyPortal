@@ -40,7 +40,9 @@ public class DashboardManageController {
     @SuppressWarnings("null")
     @GetMapping("/manage")
     public String manageView(Authentication auth, Model model){
-        String username = Objects.requireNonNull(auth).getName();
+        Authentication authentication = Objects.requireNonNull(auth);
+        String username = authentication.getName();
+        boolean isAdmin = isAdmin(authentication);
         var tabs = portalService.getPortalTabs(username).tabs();
         var categories = tabs.stream()
                 .flatMap(tab -> tab.categories().stream())
@@ -51,7 +53,10 @@ public class DashboardManageController {
         model.addAttribute("tabs", tabs);
         model.addAttribute("categories", categories);
         model.addAttribute("links", links);
-        model.addAttribute("npmLinks", proxyGetterService.getProxyHostsList());
+        model.addAttribute("isAdmin", isAdmin);
+        if (isAdmin) {
+            model.addAttribute("npmLinks", proxyGetterService.getProxyHostsList());
+        }
         return "dashboard/manage";
     }
 
@@ -283,5 +288,10 @@ public class DashboardManageController {
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException("invalid ids format", e);
         }
+    }
+
+    private boolean isAdmin(Authentication auth) {
+        return auth.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
     }
 }

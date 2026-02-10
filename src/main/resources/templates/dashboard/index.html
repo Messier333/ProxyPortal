@@ -20,7 +20,7 @@
             <div class="empty" th:if="${tabs == null or #lists.isEmpty(tabs)}">등록된 탭이 없습니다.</div>
             <div class="item" th:each="t : ${tabs}">
               <div class="item__title" th:text="${t.name}">Tab</div>
-              <div class="item__meta">#<span th:text="${t.id}">1</span></div>
+              <div class="item__meta">정렬: <span th:text="${t.sortOrder}">1</span></div>
             </div>
           </div>
         </article>
@@ -33,12 +33,14 @@
 
           <div class="list">
             <div class="empty" th:if="${categories == null or #lists.isEmpty(categories)}">등록된 카테고리가 없습니다.</div>
-            <div class="item" th:each="c : ${categories}">
-              <div class="item__title" th:text="${c.name}">Category</div>
-              <div class="item__meta">
-                탭: <span th:text="${c.tabName}">Home</span>
+            <th:block th:each="t : ${tabs}">
+              <div class="item" th:each="c : ${t.categories}">
+                <div class="item__title" th:text="${c.name}">Category</div>
+                <div class="item__meta">
+                  탭: <span th:text="${t.name}">Home</span>
+                </div>
               </div>
-            </div>
+            </th:block>
           </div>
         </article>
 
@@ -58,14 +60,18 @@
               <div>카테고리</div>
             </div>
 
-            <div class="row" th:each="l : ${links}">
-              <div class="mono" th:text="${l.name}">Name</div>
-              <div>
-                <a class="url" th:href="${l.url}" th:text="${l.url}" target="_blank" rel="noreferrer">https://</a>
-              </div>
-              <div th:text="${l.tabName}">Tab</div>
-              <div th:text="${l.categoryName}">Category</div>
-            </div>
+            <th:block th:each="t : ${tabs}">
+              <th:block th:each="c : ${t.categories}">
+                <div class="row" th:each="l : ${c.links}">
+                  <div class="mono" th:text="${l.name}">Name</div>
+                  <div>
+                    <a class="url" th:href="${l.url}" th:text="${l.url}" target="_blank" rel="noreferrer">https://</a>
+                  </div>
+                  <div th:text="${t.name}">Tab</div>
+                  <div th:text="${c.name}">Category</div>
+                </div>
+              </th:block>
+            </th:block>
           </div>
         </article>
       </section>
