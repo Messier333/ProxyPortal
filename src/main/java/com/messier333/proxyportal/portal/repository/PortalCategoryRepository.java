@@ -12,4 +12,5 @@ public interface PortalCategoryRepository extends JpaRepository<PortalCategory, 
     Optional<PortalCategory> findByIdAndTabUserUsername(Long id, String tabUserUsername);
     boolean existsByTabIdAndNameIgnoreCase(Long tabId, String name);
     List<PortalCategory> findAllByTabIdOrderBySortOrderAscIdAsc(Long tabId);
+    long deleteByTabUserUsername(String username);
 }

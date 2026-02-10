@@ -13,4 +13,5 @@ public interface PortalLinkRepository extends JpaRepository<PortalLink, Long> {
     boolean existsByCategoryIdAndUrlIgnoreCase(Long categoryId, String url);
     List<PortalLink> findAllByCategoryIdOrderBySortOrderAscIdAsc(Long categoryId);
     Optional<PortalLink> findByIdAndCategoryTabUserUsername(Long id, String username);
+    long deleteByCategoryTabUserUsername(String username);
 }

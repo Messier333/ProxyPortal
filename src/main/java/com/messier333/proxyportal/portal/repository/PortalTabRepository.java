@@ -12,4 +12,5 @@ public interface PortalTabRepository extends JpaRepository<PortalTab, Long> {
     Optional<PortalTab> findByIdAndUserUsername(Long id, String userUsername);
     boolean existsByUserUsernameAndNameIgnoreCase(String userUsername, String name);
     List<PortalTab> findAllByUserUsernameOrderBySortOrderAscIdAsc(String userUsername);
+    long deleteByUserUsername(String username);
 }

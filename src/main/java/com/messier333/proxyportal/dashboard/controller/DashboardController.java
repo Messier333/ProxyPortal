@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.messier333.proxyportal.common.exception.BadRequestException;
+import com.messier333.proxyportal.common.exception.BusinessException;
 import com.messier333.proxyportal.dashboard.dto.UserDashboardVM;
 import com.messier333.proxyportal.portal.service.PortalService;
 import com.messier333.proxyportal.user.entity.Role;
@@ -24,6 +26,10 @@ import lombok.RequiredArgsConstructor;
 @Controller
 @RequiredArgsConstructor
 public class DashboardController {
+    private static final String REDIRECT_DASHBOARD = "redirect:/dashboard";
+    private static final String REDIRECT_ACCOUNT_PAGE = "redirect:/dashboard/account/add";
+    private static final String REDIRECT_ADMIN_ONLY = REDIRECT_DASHBOARD + "?error=admin-only";
+
     private final PortalService portalService;
     private final UserService userService;
 
@@ -49,12 +55,10 @@ public class DashboardController {
     @GetMapping("/dashboard/account/add")
     public String addAccountView(
             Authentication auth,
-            @RequestParam(name="error", required=false) String error,
             Model model
     ){
-        boolean isAdmin = isAdmin(auth);
-        if (!isAdmin) {
-            return "redirect:/dashboard?error=admin-only";
+        if (!isAdmin(auth)) {
+            return REDIRECT_ADMIN_ONLY;
         }
         model.addAttribute("isAdmin", true);
 
@@ -63,10 +67,6 @@ public class DashboardController {
                 .collect(Collectors.toList());
         model.addAttribute("users", users);
         model.addAttribute("currentUsername", Objects.requireNonNull(auth).getName());
-
-        if(error != null){
-            model.addAttribute("error", error);
-        }
         return "dashboard/account-add";
     }
 
@@ -78,17 +78,12 @@ public class DashboardController {
             @RequestParam("role") String role,
             RedirectAttributes redirectAttributes
     ) {
-        if (!isAdmin(auth)) {
-            return "redirect:/dashboard?error=admin-only";
-        }
-        try {
-            Role targetRole = parseRole(role);
-            userService.createUser(username, password, targetRole);
-            redirectAttributes.addFlashAttribute("toastMessage", "계정을 추가했습니다.");
-        } catch (IllegalArgumentException e) {
-            redirectAttributes.addFlashAttribute("toastMessage", e.getMessage());
-        }
-        return "redirect:/dashboard/account/add";
+        return handleAdminAction(
+                auth,
+                redirectAttributes,
+                () -> userService.createUser(username, password, parseRole(role)),
+                "계정을 추가했습니다."
+        );
     }
 
     @PostMapping("/dashboard/account/password")
@@ -98,16 +93,12 @@ public class DashboardController {
             @RequestParam("newPassword") String newPassword,
             RedirectAttributes redirectAttributes
     ) {
-        if (!isAdmin(auth)) {
-            return "redirect:/dashboard?error=admin-only";
-        }
-        try {
-            userService.changePassword(username, newPassword);
-            redirectAttributes.addFlashAttribute("toastMessage", "비밀번호를 변경했습니다.");
-        } catch (IllegalArgumentException e) {
-            redirectAttributes.addFlashAttribute("toastMessage", e.getMessage());
-        }
-        return "redirect:/dashboard/account/add";
+        return handleAdminAction(
+                auth,
+                redirectAttributes,
+                () -> userService.changePassword(username, newPassword),
+                "비밀번호를 변경했습니다."
+        );
     }
 
     @PostMapping("/dashboard/account/delete")
@@ -117,16 +108,12 @@ public class DashboardController {
             @RequestParam("username") String username,
             RedirectAttributes redirectAttributes
     ) {
-        if (!isAdmin(auth)) {
-            return "redirect:/dashboard?error=admin-only";
-        }
-        try {
-            userService.deleteUser(user.getUsername(), username);
-            redirectAttributes.addFlashAttribute("toastMessage", "계정을 삭제했습니다.");
-        } catch (IllegalArgumentException e) {
-            redirectAttributes.addFlashAttribute("toastMessage", e.getMessage());
-        }
-        return "redirect:/dashboard/account/add";
+        return handleAdminAction(
+                auth,
+                redirectAttributes,
+                () -> userService.deleteUser(Objects.requireNonNull(user).getUsername(), username),
+                "계정을 삭제했습니다."
+        );
     }
 
     private boolean isAdmin(Authentication auth) {
@@ -141,7 +128,25 @@ public class DashboardController {
         try {
             return Role.valueOf(role.trim().toUpperCase());
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("지원하지 않는 권한입니다. USER 또는 ADMIN만 가능합니다.");
+            throw new BadRequestException("지원하지 않는 권한입니다. USER 또는 ADMIN만 가능합니다.");
         }
+    }
+
+    private String handleAdminAction(
+            Authentication auth,
+            RedirectAttributes redirectAttributes,
+            Runnable action,
+            String successMessage
+    ) {
+        if (!isAdmin(auth)) {
+            return REDIRECT_ADMIN_ONLY;
+        }
+        try {
+            action.run();
+            redirectAttributes.addFlashAttribute("toastMessage", successMessage);
+        } catch (BusinessException e) {
+            redirectAttributes.addFlashAttribute("toastMessage", e.getMessage());
+        }
+        return REDIRECT_ACCOUNT_PAGE;
     }
 }

@@ -8,8 +8,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.messier333.proxyportal.portal.entity.PortalCategory;
-import com.messier333.proxyportal.portal.entity.PortalTab;
+import com.messier333.proxyportal.common.exception.BadRequestException;
+import com.messier333.proxyportal.common.exception.ConflictException;
+import com.messier333.proxyportal.common.exception.ForbiddenOperationException;
+import com.messier333.proxyportal.common.exception.NotFoundException;
 import com.messier333.proxyportal.portal.repository.PortalCategoryRepository;
 import com.messier333.proxyportal.portal.repository.PortalLinkRepository;
 import com.messier333.proxyportal.portal.repository.PortalTabRepository;
@@ -29,10 +31,10 @@ public class UserService {
     @Transactional
     public void changePassword(Long userId, String raw) {
         if (userId == null) {
-            throw new IllegalArgumentException("userId가 필요합니다.");
+            throw new BadRequestException("userId가 필요합니다.");
         }
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> new NotFoundException("존재하지 않는 사용자입니다."));
         user.changePassword(passwordEncoder.encode(validatePassword(raw)));
     }
 
@@ -40,7 +42,7 @@ public class UserService {
     public void changePassword(String username, String raw) {
         String normalizedUsername = normalizeUsername(username);
         User user = userRepository.findByUsername(normalizedUsername)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다: " + normalizedUsername));
+                .orElseThrow(() -> new NotFoundException("존재하지 않는 사용자입니다: " + normalizedUsername));
         user.changePassword(passwordEncoder.encode(validatePassword(raw)));
     }
 
@@ -55,34 +57,28 @@ public class UserService {
         String target = normalizeUsername(targetUsername);
 
         if (actor.equals(target)) {
-            throw new IllegalArgumentException("현재 로그인한 계정은 삭제할 수 없습니다.");
+            throw new ForbiddenOperationException("현재 로그인한 계정은 삭제할 수 없습니다.");
         }
 
         User targetUser = userRepository.findByUsername(target)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다: " + target));
+                .orElseThrow(() -> new NotFoundException("존재하지 않는 사용자입니다: " + target));
 
         if (targetUser.getRole() == Role.ADMIN && userRepository.countByRole(Role.ADMIN) <= 1) {
-            throw new IllegalArgumentException("마지막 관리자 계정은 삭제할 수 없습니다.");
+            throw new ForbiddenOperationException("마지막 관리자 계정은 삭제할 수 없습니다.");
         }
 
-        List<PortalTab> tabs = portalTabRepository.findAllByUserUsernameOrderBySortOrderAscIdAsc(target);
-        for (PortalTab tab : tabs) {
-            List<PortalCategory> categories = portalCategoryRepository.findAllByTabIdOrderBySortOrderAscIdAsc(tab.getId());
-            for (PortalCategory category : categories) {
-                portalLinkRepository.deleteAll(portalLinkRepository.findAllByCategoryIdOrderBySortOrderAscIdAsc(category.getId()));
-            }
-            portalCategoryRepository.deleteAll(categories);
-        }
-        portalTabRepository.deleteAll(tabs);
+        // Delete child entities first because FK constraints are defined without ON DELETE CASCADE.
+        portalLinkRepository.deleteByCategoryTabUserUsername(target);
+        portalCategoryRepository.deleteByTabUserUsername(target);
+        portalTabRepository.deleteByUserUsername(target);
         userRepository.delete(targetUser);
     }
 
-    @SuppressWarnings("null")
     @Transactional
     public Long createUser(String username, String rawPassword, Role role) {
         String normalizedUsername = normalizeUsername(username);
         if (userRepository.existsByUsername(normalizedUsername)) {
-            throw new IllegalArgumentException("이미 존재하는 username 입니다: " + normalizedUsername);
+            throw new ConflictException("이미 존재하는 username 입니다: " + normalizedUsername);
         }
         Role targetRole = role == null ? Role.USER : role;
 
@@ -94,18 +90,18 @@ public class UserService {
 
     private String normalizeUsername(String username) {
         if (username == null || username.isBlank()) {
-            throw new IllegalArgumentException("username은 비어 있을 수 없습니다.");
+            throw new BadRequestException("username은 비어 있을 수 없습니다.");
         }
         return username.trim();
     }
 
     private String validatePassword(String rawPassword) {
         if (rawPassword == null || rawPassword.isBlank()) {
-            throw new IllegalArgumentException("비밀번호는 비어 있을 수 없습니다.");
+            throw new BadRequestException("비밀번호는 비어 있을 수 없습니다.");
         }
         String normalized = rawPassword.trim();
         if (normalized.length() < 4) {
-            throw new IllegalArgumentException("비밀번호는 최소 4자 이상이어야 합니다.");
+            throw new BadRequestException("비밀번호는 최소 4자 이상이어야 합니다.");
         }
         return normalized;
     }

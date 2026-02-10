@@ -20,10 +20,11 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.messier333.proxyportal.common.exception.BadRequestException;
+import com.messier333.proxyportal.common.exception.BusinessException;
 import com.messier333.proxyportal.portal.dto.request.CategoryCreateRequest;
 import com.messier333.proxyportal.portal.dto.request.TabCreateRequest;
 import com.messier333.proxyportal.portal.dto.response.CategoryResponse;
-import com.messier333.proxyportal.portal.dto.response.LinkResponse;
 import com.messier333.proxyportal.portal.service.PortalService;
 import com.messier333.proxyportal.proxygetter.service.ProxyGetterService;
 
@@ -37,7 +38,6 @@ public class DashboardManageController {
     private final PortalService portalService;
     private final ProxyGetterService proxyGetterService;
     
-    @SuppressWarnings("null")
     @GetMapping("/manage")
     public String manageView(Authentication auth, Model model){
         Authentication authentication = Objects.requireNonNull(auth);
@@ -71,7 +71,7 @@ public class DashboardManageController {
         try {
             var tab = portalService.createTab(user.getUsername(), new TabCreateRequest(name, sortOrder, null));
             portalService.uploadTabBackground(user.getUsername(), tab.id(), backgroundImage);
-        } catch (IllegalArgumentException e) {
+        } catch (BusinessException e) {
             redirectAttributes.addFlashAttribute("toastMessage", e.getMessage());
         }
         
@@ -113,14 +113,14 @@ public class DashboardManageController {
         try {
             portalService.deleteTab(user.getUsername(), tabId);
             redirectAttributes.addFlashAttribute("toastMessage", "탭을 삭제했습니다.");
-        } catch (IllegalArgumentException e) {
+        } catch (BusinessException e) {
             redirectAttributes.addFlashAttribute("toastMessage", e.getMessage());
         }
         return "redirect:/dashboard/manage";
     }
 
     @PostMapping("/manage/categories")
-    public String postMethodName(
+    public String createCategory(
             @RequestParam("name") String name,
             @RequestParam("tabId") Long tabId,
             @RequestParam(name = "sortOrder", required = false) Integer sortOrder,
@@ -130,7 +130,7 @@ public class DashboardManageController {
         try {
             CategoryResponse categoryResponse = portalService.createCategory(user.getUsername(), tabId, new CategoryCreateRequest(name, null, sortOrder));
             portalService.addCategorytoTab(user.getUsername(), tabId, categoryResponse.id());
-        } catch (IllegalArgumentException e) {
+        } catch (BusinessException e) {
             redirectAttributes.addFlashAttribute("toastMessage", e.getMessage());
         }
         return "redirect:/dashboard/manage";
@@ -145,7 +145,7 @@ public class DashboardManageController {
         try {
             portalService.deleteCategory(user.getUsername(), categoryId);
             redirectAttributes.addFlashAttribute("toastMessage", "카테고리를 삭제했습니다.");
-        } catch (IllegalArgumentException e) {
+        } catch (BusinessException e) {
             redirectAttributes.addFlashAttribute("toastMessage", e.getMessage());
         }
         return "redirect:/dashboard/manage";
@@ -163,9 +163,8 @@ public class DashboardManageController {
             RedirectAttributes redirectAttributes
     ) {
         try {
-            LinkResponse response = portalService.createLink(user.getUsername(), categoryId, name, url, icon, iconColor, sortOrder);
-            Objects.requireNonNull(response, "link response must not be null");
-        } catch (IllegalArgumentException e) {
+            portalService.createLink(user.getUsername(), categoryId, name, url, icon, iconColor, sortOrder);
+        } catch (BusinessException e) {
             redirectAttributes.addFlashAttribute("toastMessage", e.getMessage());
         }
         return "redirect:/dashboard/manage";
@@ -180,7 +179,7 @@ public class DashboardManageController {
         try {
             portalService.deleteLink(user.getUsername(), linkId);
             redirectAttributes.addFlashAttribute("toastMessage", "링크를 삭제했습니다.");
-        } catch (IllegalArgumentException e) {
+        } catch (BusinessException e) {
             redirectAttributes.addFlashAttribute("toastMessage", e.getMessage());
         }
         return "redirect:/dashboard/manage";
@@ -195,7 +194,7 @@ public class DashboardManageController {
     ) {
         try {
             portalService.updateTabSortOrder(user.getUsername(), tabId, sortOrder);
-        } catch (IllegalArgumentException e) {
+        } catch (BusinessException e) {
             redirectAttributes.addFlashAttribute("toastMessage", e.getMessage());
         }
         return "redirect:/dashboard/manage";
@@ -210,7 +209,7 @@ public class DashboardManageController {
     ) {
         try {
             portalService.updateCategorySortOrder(user.getUsername(), categoryId, sortOrder);
-        } catch (IllegalArgumentException e) {
+        } catch (BusinessException e) {
             redirectAttributes.addFlashAttribute("toastMessage", e.getMessage());
         }
         return "redirect:/dashboard/manage";
@@ -225,7 +224,7 @@ public class DashboardManageController {
     ) {
         try {
             portalService.updateLinkSortOrder(user.getUsername(), linkId, sortOrder);
-        } catch (IllegalArgumentException e) {
+        } catch (BusinessException e) {
             redirectAttributes.addFlashAttribute("toastMessage", e.getMessage());
         }
         return "redirect:/dashboard/manage";
@@ -240,7 +239,7 @@ public class DashboardManageController {
         try {
             portalService.reorderTabsByIds(user.getUsername(), parseOrderedIds(ids));
             return ResponseEntity.noContent().build();
-        } catch (IllegalArgumentException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest().build();
         }
     }
@@ -255,7 +254,7 @@ public class DashboardManageController {
         try {
             portalService.reorderCategoriesByIds(user.getUsername(), tabId, parseOrderedIds(ids));
             return ResponseEntity.noContent().build();
-        } catch (IllegalArgumentException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest().build();
         }
     }
@@ -270,14 +269,14 @@ public class DashboardManageController {
         try {
             portalService.reorderLinksByIds(user.getUsername(), categoryId, parseOrderedIds(ids));
             return ResponseEntity.noContent().build();
-        } catch (IllegalArgumentException e) {
+        } catch (BusinessException e) {
             return ResponseEntity.badRequest().build();
         }
     }
 
     private List<Long> parseOrderedIds(String rawIds) {
         if (rawIds == null || rawIds.isBlank()) {
-            throw new IllegalArgumentException("ids must not be blank");
+            throw new BadRequestException("ids must not be blank");
         }
         try {
             return Arrays.stream(rawIds.split(","))
@@ -286,7 +285,7 @@ public class DashboardManageController {
                     .map(Long::parseLong)
                     .toList();
         } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("invalid ids format", e);
+            throw new BadRequestException("invalid ids format");
         }
     }
 
