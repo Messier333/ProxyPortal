@@ -2,8 +2,6 @@ package com.messier333.proxyportal.user.service;
 
 import java.util.List;
 
-import lombok.RequiredArgsConstructor;
-
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +16,8 @@ import com.messier333.proxyportal.portal.repository.PortalTabRepository;
 import com.messier333.proxyportal.user.entity.Role;
 import com.messier333.proxyportal.user.entity.User;
 import com.messier333.proxyportal.user.repository.UserRepository;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -74,6 +74,7 @@ public class UserService {
         userRepository.delete(targetUser);
     }
 
+    @SuppressWarnings("null")
     @Transactional
     public Long createUser(String username, String rawPassword, Role role) {
         String normalizedUsername = normalizeUsername(username);

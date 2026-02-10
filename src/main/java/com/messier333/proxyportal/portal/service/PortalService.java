@@ -9,8 +9,8 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -342,6 +342,7 @@ public class PortalService {
         return createLink(username, categoryId, request);
     }
 
+    @SuppressWarnings("null")
     @Transactional
     public CategoryResponse addCategorytoTab(String username, Long tabId, Long categoryId){
         PortalCategory portalCategory = portalCategoryRepository.findByIdAndTabUserUsername(categoryId,username).orElseThrow(
