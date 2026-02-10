@@ -12,6 +12,9 @@ spring:
     multipart:
       max-file-size: 10MB
       max-request-size: 10MB
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
 
 app:
   upload:
@@ -24,5 +27,5 @@ npm:
 
 logging:
   level:
-    org.springframework.jdbc.datasource: DEBUG
-    com.zaxxer.hikari: DEBUG
+    "[org.springframework.jdbc.datasource]": DEBUG
+    "[com.zaxxer.hikari]": DEBUG

@@ -2,10 +2,9 @@ package com.messier333.proxyportal.user.service;
 
 import java.util.List;
 
-import lombok.RequiredArgsConstructor;
-
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.messier333.proxyportal.common.exception.BadRequestException;
@@ -19,6 +18,8 @@ import com.messier333.proxyportal.user.entity.Role;
 import com.messier333.proxyportal.user.entity.User;
 import com.messier333.proxyportal.user.repository.UserRepository;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
 @RequiredArgsConstructor
 public class UserService {
@@ -29,20 +30,20 @@ public class UserService {
     private final PortalLinkRepository portalLinkRepository;
 
     @Transactional
-    public void changePassword(Long userId, String raw) {
-        if (userId == null) {
-            throw new BadRequestException("userId가 필요합니다.");
-        }
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("존재하지 않는 사용자입니다."));
-        user.changePassword(passwordEncoder.encode(validatePassword(raw)));
-    }
-
-    @Transactional
     public void changePassword(String username, String raw) {
         String normalizedUsername = normalizeUsername(username);
         User user = userRepository.findByUsername(normalizedUsername)
                 .orElseThrow(() -> new NotFoundException("존재하지 않는 사용자입니다: " + normalizedUsername));
+        user.changePassword(passwordEncoder.encode(validatePassword(raw)));
+    }
+
+    @Transactional
+    public void changePassword(Long userId, String raw) {
+        if (userId == null) {
+            throw new BadRequestException("userId는 비어 있을 수 없습니다.");
+        }
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("존재하지 않는 사용자입니다: " + userId));
         user.changePassword(passwordEncoder.encode(validatePassword(raw)));
     }
 
@@ -74,6 +75,7 @@ public class UserService {
         userRepository.delete(targetUser);
     }
 
+    @SuppressWarnings("null")
     @Transactional
     public Long createUser(String username, String rawPassword, Role role) {
         String normalizedUsername = normalizeUsername(username);
@@ -84,9 +86,19 @@ public class UserService {
 
         User user = User.createUser(normalizedUsername, passwordEncoder.encode(validatePassword(rawPassword)), targetRole);
   
-        userRepository.save(user);
-        return user.getId();
+        User saved = userRepository.save(user);
+        return saved.getId();
     }
+
+    @Transactional(isolation = Isolation.SERIALIZABLE)
+    public boolean createInitialAdmin(String username, String rawPassword) {
+        if (userRepository.countByRole(Role.ADMIN) > 0) {
+            return false;
+        }
+        createUser(username, rawPassword, Role.ADMIN);
+        return true;
+    }
+
 
     private String normalizeUsername(String username) {
         if (username == null || username.isBlank()) {

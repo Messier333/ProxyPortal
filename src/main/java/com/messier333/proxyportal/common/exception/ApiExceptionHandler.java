@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.Map;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -17,13 +18,19 @@ public class ApiExceptionHandler {
             BusinessException exception,
             HttpServletRequest request
     ) {
+        HttpStatus status = exception.getStatus();
+        if (status == null) {
+            status = HttpStatus.INTERNAL_SERVER_ERROR;
+        }
+        HttpStatus httpStatus = status;
+        String error = httpStatus.getReasonPhrase();
         Map<String, Object> body = Map.of(
                 "timestamp", Instant.now().toString(),
-                "status", exception.getStatus().value(),
-                "error", exception.getStatus().getReasonPhrase(),
+                "status", status.value(),
+                "error", error,
                 "message", exception.getMessage(),
                 "path", request.getRequestURI()
         );
-        return ResponseEntity.status(exception.getStatus()).body(body);
+        return ResponseEntity.status(status).body(body);
     }
 }

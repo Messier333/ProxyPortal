@@ -4,7 +4,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import com.messier333.proxyportal.portal.dto.response.PortalTabsResponse;
+import com.messier333.proxyportal.portal.dto.response.TabResponse;
+import lombok.NonNull;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -29,11 +33,13 @@ import com.messier333.proxyportal.portal.service.PortalService;
 import com.messier333.proxyportal.proxygetter.service.ProxyGetterService;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 
 @Controller
 @RequestMapping("/dashboard")
 @RequiredArgsConstructor
+@Slf4j
 public class DashboardManageController {
     private final PortalService portalService;
     private final ProxyGetterService proxyGetterService;
@@ -42,9 +48,9 @@ public class DashboardManageController {
     public String manageView(Authentication auth, Model model){
         Authentication authentication = Objects.requireNonNull(auth);
         String username = authentication.getName();
-        boolean isAdmin = isAdmin(authentication);
-        var tabs = portalService.getPortalTabs(username).tabs();
-        var categories = tabs.stream()
+        boolean isAdmin = isIsAdmin(authentication);
+        var tabs = getPortalTabs(username).tabs();
+        var categories = getStream(tabs)
                 .flatMap(tab -> tab.categories().stream())
                 .collect(Collectors.toList());
         var links = categories.stream()
@@ -55,9 +61,27 @@ public class DashboardManageController {
         model.addAttribute("links", links);
         model.addAttribute("isAdmin", isAdmin);
         if (isAdmin) {
-            model.addAttribute("npmLinks", proxyGetterService.getProxyHostsList());
+            try {
+                model.addAttribute("npmLinks", proxyGetterService.getProxyHostsList());
+            } catch (Exception e) {
+                log.warn("Failed to fetch NPM proxy hosts", e);
+                model.addAttribute("npmLinks", List.of());
+                model.addAttribute("npmUnavailable", true);
+            }
         }
         return "dashboard/manage";
+    }
+
+    private static @NonNull Stream<TabResponse> getStream(List<TabResponse> tabs) {
+        return tabs.stream();
+    }
+
+    private PortalTabsResponse getPortalTabs(String username) {
+        return portalService.getPortalTabs(username);
+    }
+
+    private boolean isIsAdmin(Authentication authentication) {
+        return isAdmin(authentication);
     }
 
     @PostMapping("/manage/tabs")
@@ -79,14 +103,14 @@ public class DashboardManageController {
     }
 
     @PostMapping("/manage/tabs/{tabId}/background/remove")
-    public String removeTabBackground(@PathVariable("tabId") Long tabId, @AuthenticationPrincipal User user) {
+    public String removeTabBackground(@PathVariable Long tabId, @AuthenticationPrincipal User user) {
         portalService.clearTabBackground(user.getUsername(), tabId);
         return "redirect:/dashboard/manage";
     }
 
     @PostMapping("/manage/tabs/{tabId}/background")
     public String uploadTabBackground(
-            @PathVariable("tabId") Long tabId,
+            @PathVariable Long tabId,
             @RequestParam("backgroundImage") MultipartFile backgroundImage,
             @AuthenticationPrincipal User user
     ) {
@@ -96,7 +120,7 @@ public class DashboardManageController {
 
     @PostMapping("/manage/tabs/{tabId}/rename")
     public String renameTab(
-            @PathVariable("tabId") Long tabId,
+            @PathVariable Long tabId,
             @RequestParam("name") String name,
             @AuthenticationPrincipal User user
     ) {
@@ -106,7 +130,7 @@ public class DashboardManageController {
 
     @PostMapping("/tabs/{tabId}/delete")
     public String deleteTab(
-            @PathVariable("tabId") Long tabId,
+            @PathVariable Long tabId,
             @AuthenticationPrincipal User user,
             RedirectAttributes redirectAttributes
     ) {
@@ -138,7 +162,7 @@ public class DashboardManageController {
 
     @PostMapping("/categories/{categoryId}/delete")
     public String deleteCategory(
-            @PathVariable("categoryId") Long categoryId,
+            @PathVariable Long categoryId,
             @AuthenticationPrincipal User user,
             RedirectAttributes redirectAttributes
     ) {
@@ -172,7 +196,7 @@ public class DashboardManageController {
 
     @PostMapping("/links/{linkId}/delete")
     public String deleteLink(
-            @PathVariable("linkId") Long linkId,
+            @PathVariable Long linkId,
             @AuthenticationPrincipal User user,
             RedirectAttributes redirectAttributes
     ) {
@@ -187,7 +211,7 @@ public class DashboardManageController {
 
     @PostMapping("/manage/tabs/{tabId}/sort")
     public String updateTabSort(
-            @PathVariable("tabId") Long tabId,
+            @PathVariable Long tabId,
             @RequestParam("sortOrder") Integer sortOrder,
             @AuthenticationPrincipal User user,
             RedirectAttributes redirectAttributes
@@ -202,7 +226,7 @@ public class DashboardManageController {
 
     @PostMapping("/manage/categories/{categoryId}/sort")
     public String updateCategorySort(
-            @PathVariable("categoryId") Long categoryId,
+            @PathVariable Long categoryId,
             @RequestParam("sortOrder") Integer sortOrder,
             @AuthenticationPrincipal User user,
             RedirectAttributes redirectAttributes
@@ -217,7 +241,7 @@ public class DashboardManageController {
 
     @PostMapping("/manage/links/{linkId}/sort")
     public String updateLinkSort(
-            @PathVariable("linkId") Long linkId,
+            @PathVariable Long linkId,
             @RequestParam("sortOrder") Integer sortOrder,
             @AuthenticationPrincipal User user,
             RedirectAttributes redirectAttributes

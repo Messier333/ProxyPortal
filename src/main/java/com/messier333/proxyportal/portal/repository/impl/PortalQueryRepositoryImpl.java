@@ -113,6 +113,7 @@ public class PortalQueryRepositoryImpl implements PortalQueryRepository {
             return new CategoryResponse(id, name, sort, links);
         }
     }
+
     @Override
     public PortalCategoriesResponse findCategoriesByUsername(String username) {
         List<CategoryResponse> categories = findTabsByUsername(username).tabs().stream()
