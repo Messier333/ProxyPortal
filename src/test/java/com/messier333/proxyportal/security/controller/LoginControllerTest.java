@@ -58,6 +58,15 @@ class LoginControllerTest {
     }
 
     @Test
+    void showLoginPage_shouldShowSetupMessageWhenSetupParamExists() throws Exception {
+        when(userRepository.countByRole(Role.ADMIN)).thenReturn(1L);
+        mockMvc.perform(get("/login").param("setup", "1"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("auth/login"))
+                .andExpect(model().attribute("loginMessage", "관리자 계정이 생성되었습니다. 로그인하세요."));
+    }
+
+    @Test
     void showLoginPage_shouldRenderLoginViewWithoutMessage() throws Exception {
         when(userRepository.countByRole(Role.ADMIN)).thenReturn(1L);
         mockMvc.perform(get("/login"))

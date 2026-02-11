@@ -14,6 +14,8 @@ import com.messier333.proxyportal.common.exception.NotFoundException;
 import com.messier333.proxyportal.portal.repository.PortalCategoryRepository;
 import com.messier333.proxyportal.portal.repository.PortalLinkRepository;
 import com.messier333.proxyportal.portal.repository.PortalTabRepository;
+import com.messier333.proxyportal.security.service.RememberMeTokenService;
+import com.messier333.proxyportal.security.service.UserSessionService;
 import com.messier333.proxyportal.user.entity.Role;
 import com.messier333.proxyportal.user.entity.User;
 import com.messier333.proxyportal.user.repository.UserRepository;
@@ -28,6 +30,8 @@ public class UserService {
     private final PortalTabRepository portalTabRepository;
     private final PortalCategoryRepository portalCategoryRepository;
     private final PortalLinkRepository portalLinkRepository;
+    private final RememberMeTokenService rememberMeTokenService;
+    private final UserSessionService userSessionService;
 
     @Transactional
     public void changePassword(String username, String raw) {
@@ -35,6 +39,8 @@ public class UserService {
         User user = userRepository.findByUsername(normalizedUsername)
                 .orElseThrow(() -> new NotFoundException("존재하지 않는 사용자입니다: " + normalizedUsername));
         user.changePassword(passwordEncoder.encode(validatePassword(raw)));
+        rememberMeTokenService.invalidateAllTokensForUsername(normalizedUsername);
+        userSessionService.invalidateAllSessionsForUsername(normalizedUsername);
     }
 
     @Transactional
@@ -45,6 +51,8 @@ public class UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("존재하지 않는 사용자입니다: " + userId));
         user.changePassword(passwordEncoder.encode(validatePassword(raw)));
+        rememberMeTokenService.invalidateAllTokensForUsername(user.getUsername());
+        userSessionService.invalidateAllSessionsForUsername(user.getUsername());
     }
 
     @Transactional(readOnly = true)
@@ -67,6 +75,9 @@ public class UserService {
         if (targetUser.getRole() == Role.ADMIN && userRepository.countByRole(Role.ADMIN) <= 1) {
             throw new ForbiddenOperationException("마지막 관리자 계정은 삭제할 수 없습니다.");
         }
+
+        rememberMeTokenService.invalidateAllTokensForUsername(target);
+        userSessionService.invalidateAllSessionsForUsername(target);
 
         // Delete child entities first because FK constraints are defined without ON DELETE CASCADE.
         portalLinkRepository.deleteByCategoryTabUserUsername(target);
@@ -97,6 +108,15 @@ public class UserService {
         }
         createUser(username, rawPassword, Role.ADMIN);
         return true;
+    }
+
+    @Transactional
+    public void forceLogoutAllDevices(String username) {
+        String normalizedUsername = normalizeUsername(username);
+        userRepository.findByUsername(normalizedUsername)
+                .orElseThrow(() -> new NotFoundException("존재하지 않는 사용자입니다: " + normalizedUsername));
+        rememberMeTokenService.invalidateAllTokensForUsername(normalizedUsername);
+        userSessionService.invalidateAllSessionsForUsername(normalizedUsername);
     }
 
 

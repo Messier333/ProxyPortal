@@ -88,8 +88,15 @@
               <div class="mono" th:text="${u.username}">admin</div>
               <div th:text="${u.role}">ADMIN</div>
               <div>
+                <form th:action="@{/dashboard/account/logout-all}" method="post"
+                      onsubmit="return confirm('해당 계정의 모든 기기 로그인 상태를 해제하시겠습니까?');"
+                      style="display: inline-block; margin-right: .5rem;">
+                  <input type="hidden" name="username" th:value="${u.username}">
+                  <button class="btn btn--small" type="submit">모든 기기 로그아웃</button>
+                </form>
                 <form th:if="${u.username != currentUsername}"
                       th:action="@{/dashboard/account/delete}" method="post"
+                      style="display: inline-block;"
                       onsubmit="return confirm('정말 이 계정을 삭제하시겠습니까? 관련 포털 데이터도 함께 삭제됩니다.');">
                   <input type="hidden" name="username" th:value="${u.username}">
                   <button class="btn btn--small btn--danger" type="submit">계정 삭제</button>

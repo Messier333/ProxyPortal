@@ -15,8 +15,23 @@ spring:
   jpa:
     hibernate:
       ddl-auto: create-drop
+  session:
+    store-type: jdbc
+    jdbc:
+      initialize-schema: never
+
+server:
+  servlet:
+    session:
+      cookie:
+        http-only: true
+        same-site: lax
 
 app:
+  security:
+    remember-me:
+      key: ${REMEMBER_ME_KEY:proxyportal-remember-me-dev-key-change-this}
+      token-validity-seconds: ${REMEMBER_ME_TOKEN_VALIDITY_SECONDS:2592000}
   upload:
     root: uploads
 

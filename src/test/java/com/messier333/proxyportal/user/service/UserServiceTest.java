@@ -26,6 +26,8 @@ import com.messier333.proxyportal.common.exception.NotFoundException;
 import com.messier333.proxyportal.portal.repository.PortalCategoryRepository;
 import com.messier333.proxyportal.portal.repository.PortalLinkRepository;
 import com.messier333.proxyportal.portal.repository.PortalTabRepository;
+import com.messier333.proxyportal.security.service.RememberMeTokenService;
+import com.messier333.proxyportal.security.service.UserSessionService;
 import com.messier333.proxyportal.user.entity.Role;
 import com.messier333.proxyportal.user.entity.User;
 import com.messier333.proxyportal.user.repository.UserRepository;
@@ -42,6 +44,10 @@ class UserServiceTest {
     private PortalCategoryRepository portalCategoryRepository;
     @Mock
     private PortalLinkRepository portalLinkRepository;
+    @Mock
+    private RememberMeTokenService rememberMeTokenService;
+    @Mock
+    private UserSessionService userSessionService;
 
     @InjectMocks
     private UserService userService;
@@ -102,6 +108,8 @@ class UserServiceTest {
         userService.changePassword(1L, " newpass ");
 
         assertThat(user.getPassword()).isEqualTo("ENC_NEW");
+        verify(rememberMeTokenService).invalidateAllTokensForUsername("alice");
+        verify(userSessionService).invalidateAllSessionsForUsername("alice");
     }
 
     @Test
@@ -119,6 +127,8 @@ class UserServiceTest {
         userService.changePassword(" alice ", "newpass");
 
         assertThat(user.getPassword()).isEqualTo("ENC_NEW");
+        verify(rememberMeTokenService).invalidateAllTokensForUsername("alice");
+        verify(userSessionService).invalidateAllSessionsForUsername("alice");
     }
 
     @Test
@@ -160,6 +170,8 @@ class UserServiceTest {
 
         userService.deleteUser("admin", " target ");
 
+        verify(rememberMeTokenService).invalidateAllTokensForUsername("target");
+        verify(userSessionService).invalidateAllSessionsForUsername("target");
         verify(portalLinkRepository).deleteByCategoryTabUserUsername("target");
         verify(portalCategoryRepository).deleteByTabUserUsername("target");
         verify(portalTabRepository).deleteByUserUsername("target");
@@ -176,5 +188,55 @@ class UserServiceTest {
 
         assertThat(result).hasSize(2);
         assertThat(result).containsExactly(first, second);
+    }
+
+    @Test
+    void createInitialAdmin_shouldReturnFalseWhenAdminAlreadyExists() {
+        when(userRepository.countByRole(Role.ADMIN)).thenReturn(1L);
+
+        boolean created = userService.createInitialAdmin("admin", "pass1234");
+
+        assertThat(created).isFalse();
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @SuppressWarnings("null")
+    @Test
+    void createInitialAdmin_shouldCreateAdminWhenNoAdminExists() {
+        when(userRepository.countByRole(Role.ADMIN)).thenReturn(0L);
+        when(userRepository.existsByUsername("admin")).thenReturn(false);
+        when(passwordEncoder.encode("pass1234")).thenReturn("ENCODED");
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
+            User user = Objects.requireNonNull(invocation.getArgument(0, User.class));
+            ReflectionTestUtils.setField(user, "id", 99L);
+            return user;
+        });
+
+        boolean created = userService.createInitialAdmin(" admin ", "pass1234");
+
+        assertThat(created).isTrue();
+        ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
+        verify(userRepository).save(captor.capture());
+        assertThat(Objects.requireNonNull(captor.getValue()).getRole()).isEqualTo(Role.ADMIN);
+        assertThat(captor.getValue().getUsername()).isEqualTo("admin");
+    }
+
+    @Test
+    void forceLogoutAllDevices_shouldInvalidateRememberMeTokens() {
+        User user = Objects.requireNonNull(User.createUser("alice", "PW", Role.USER));
+        when(userRepository.findByUsername("alice")).thenReturn(Optional.of(user));
+
+        userService.forceLogoutAllDevices(" alice ");
+
+        verify(rememberMeTokenService).invalidateAllTokensForUsername("alice");
+        verify(userSessionService).invalidateAllSessionsForUsername("alice");
+    }
+
+    @Test
+    void forceLogoutAllDevices_shouldThrowWhenUserMissing() {
+        when(userRepository.findByUsername("ghost")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> userService.forceLogoutAllDevices("ghost"))
+                .isInstanceOf(NotFoundException.class);
     }
 }

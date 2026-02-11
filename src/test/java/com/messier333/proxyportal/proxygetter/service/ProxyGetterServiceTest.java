@@ -46,4 +46,17 @@ class ProxyGetterServiceTest {
                 .isInstanceOf(RuntimeException.class)
                 .hasMessageContaining("down");
     }
+
+    @Test
+    void getProxyHostsList_shouldIgnoreNullDomainNames() {
+        NpmProxyHostDto first = new NpmProxyHostDto();
+        ReflectionTestUtils.setField(first, "domain_names", null);
+        NpmProxyHostDto second = new NpmProxyHostDto();
+        ReflectionTestUtils.setField(second, "domain_names", new String[] {"only.example.com"});
+        when(npmClient.getProxyHosts()).thenReturn(List.of(first, second));
+
+        List<String> result = proxyGetterService.getProxyHostsList();
+
+        assertThat(result).containsExactly("only.example.com");
+    }
 }

@@ -1,6 +1,8 @@
 package com.messier333.proxyportal.dashboard.controller;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -145,6 +147,19 @@ class DashboardControllerTest {
         assertThat(view).isEqualTo("redirect:/dashboard/account/add");
         verify(userService).deleteUser(eq("admin"), eq("alice"));
         assertThat(redirect.getFlashAttributes().get("toastMessage")).isEqualTo("계정을 삭제했습니다.");
+    }
+
+    @Test
+    void forceLogoutAllDevices_shouldDelegateWhenAdmin() {
+        Authentication auth = adminAuth("admin");
+        RedirectAttributesModelMap redirect = new RedirectAttributesModelMap();
+
+        String view = dashboardController.forceLogoutAllDevices(auth, "alice", redirect);
+
+        assertThat(view).isEqualTo("redirect:/dashboard/account/add");
+        verify(userService).forceLogoutAllDevices("alice");
+        Map<String, Object> flashAttributes = new HashMap<>(redirect.getFlashAttributes());
+        assertThat(flashAttributes).containsEntry("toastMessage", "모든 기기 로그아웃을 처리했습니다.");
     }
 
     @Test
