@@ -114,21 +114,53 @@ cd proxyportal
 - 패키지 권한: `packages: write` (워크플로에 이미 포함)
 - 조직/저장소 정책에서 GHCR 푸시 허용
 
-### 2) 컨테이너 실행 예시
+### 2) Docker compose
 
 ```bash
-docker run -d --name proxyportal \
-  -p 8080:8080 \
-  -e PUID=1000 \
-  -e PGID=1000 \
-  -e SPRING_DATASOURCE_URL='jdbc:postgresql://<db-host>:5432/<db-name>' \
-  -e SPRING_DATASOURCE_USERNAME='<db-user>' \
-  -e SPRING_DATASOURCE_PASSWORD='<db-password>' \
-  -e REMEMBER_ME_KEY='<strong-random-secret>' \
-  -e NPM_BASE_URL='http://<npm-host>:81' \
-  -e NPM_IDENTITY='<npm-identity>' \
-  -e NPM_SECRET='<npm-secret>' \
-  ghcr.io/<owner>/<repo>:latest
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: proxyportal
+      POSTGRES_USER: proxyportal
+      POSTGRES_PASSWORD: proxyportal
+      TZ: Asia/Seoul
+    volumes:
+      - {postgresql data path}:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  app:
+    image: ${APP_IMAGE:-ghcr.io/messier333/proxyportal:latest}
+    restart: unless-stopped
+    pull_policy: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PUID: 568
+      PGID: 568
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/proxyportal
+      SPRING_DATASOURCE_USERNAME: proxyportal
+      SPRING_DATASOURCE_PASSWORD: proxyportal
+      REMEMBER_ME_KEY: {random secret for signing remember-me cookies, e.g. 64+ chars}
+      NPM_BASE_URL: {npm url}
+      NPM_IDENTITY: {npm id}
+      NPM_SECRET: {npm password}
+      TZ: Asia/Seoul
+    ports:
+      - "{proxyportal port}:8080"
+    volumes:
+      - {image path}:/app/uploads
+
+volumes:
+  proxyportal_postgres_data:
+  proxyportal_uploads:
+
 ```
 
 이미지는 기본적으로 `SPRING_PROFILES_ACTIVE=prod`로 실행됩니다.
