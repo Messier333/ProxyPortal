@@ -11,9 +11,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import com.messier333.proxyportal.security.service.LoginAttemptMessages;
 import com.messier333.proxyportal.user.entity.Role;
 import com.messier333.proxyportal.user.repository.UserRepository;
 
@@ -49,12 +51,33 @@ class LoginControllerTest {
     }
 
     @Test
+    void showLoginPage_shouldPreferSessionErrorMessageWhenPresent() throws Exception {
+        when(userRepository.countByRole(Role.ADMIN)).thenReturn(1L);
+        MockHttpSession session = new MockHttpSession();
+        session.setAttribute(LoginAttemptMessages.SESSION_KEY, "로그인 실패 3회 (남은 시도 2회).");
+
+        mockMvc.perform(get("/login").param("error", "1").session(session))
+                .andExpect(status().isOk())
+                .andExpect(view().name("auth/login"))
+                .andExpect(model().attribute("loginMessage", "로그인 실패 3회 (남은 시도 2회)."));
+    }
+
+    @Test
     void showLoginPage_shouldShowLogoutMessageWhenLogoutParamExists() throws Exception {
         when(userRepository.countByRole(Role.ADMIN)).thenReturn(1L);
         mockMvc.perform(get("/login").param("logout", "1"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("auth/login"))
                 .andExpect(model().attribute("loginMessage", "로그아웃되었습니다."));
+    }
+
+    @Test
+    void showLoginPage_shouldShowSetupMessageWhenSetupParamExists() throws Exception {
+        when(userRepository.countByRole(Role.ADMIN)).thenReturn(1L);
+        mockMvc.perform(get("/login").param("setup", "1"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("auth/login"))
+                .andExpect(model().attribute("loginMessage", "관리자 계정이 생성되었습니다. 로그인하세요."));
     }
 
     @Test

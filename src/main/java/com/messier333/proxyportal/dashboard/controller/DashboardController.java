@@ -116,6 +116,20 @@ public class DashboardController {
         );
     }
 
+    @PostMapping("/dashboard/account/logout-all")
+    public String forceLogoutAllDevices(
+            Authentication auth,
+            @RequestParam("username") String username,
+            RedirectAttributes redirectAttributes
+    ) {
+        return handleAdminAction(
+                auth,
+                redirectAttributes,
+                () -> userService.forceLogoutAllDevices(username),
+                "모든 기기 로그아웃을 처리했습니다."
+        );
+    }
+
     private boolean isAdmin(Authentication auth) {
         return auth != null && auth.getAuthorities().stream()
                 .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));

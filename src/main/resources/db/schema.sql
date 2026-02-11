@@ -66,3 +66,13 @@ CREATE TABLE IF NOT EXISTS portal_links (
 
 CREATE INDEX IF NOT EXISTS idx_portal_links_category_sort
     ON portal_links (category_id, sort_order);
+
+-- =========================
+-- REMEMBER-ME TOKENS
+-- =========================
+CREATE TABLE IF NOT EXISTS persistent_logins (
+                                                 username VARCHAR(64) NOT NULL,
+    series VARCHAR(64) PRIMARY KEY,
+    token VARCHAR(64) NOT NULL,
+    last_used TIMESTAMP NOT NULL
+    );
