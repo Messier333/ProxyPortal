@@ -11,6 +11,7 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.web.servlet.server.CookieSameSiteSupplier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
@@ -115,6 +116,7 @@ public class SecurityConfig {
     }
 
     @Bean
+    @Profile("!prod")
     public ApplicationRunner persistentLoginsTableInitializer(JdbcTemplate jdbcTemplate) {
         return args -> jdbcTemplate.execute("""
                 CREATE TABLE IF NOT EXISTS persistent_logins (
@@ -127,6 +129,7 @@ public class SecurityConfig {
     }
 
     @Bean
+    @Profile("!prod")
     public ApplicationRunner springSessionTableInitializer(DataSource dataSource, JdbcTemplate jdbcTemplate) {
         return args -> {
             String createAttributesTableSql = isPostgres(dataSource)

@@ -9,3 +9,8 @@ spring:
     hibernate:
       ddl-auto: create-drop
     defer-datasource-initialization: true
+
+logging:
+  level:
+    "[org.springframework.jdbc.datasource]": DEBUG
+    "[com.zaxxer.hikari]": DEBUG

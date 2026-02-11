@@ -15,6 +15,11 @@ spring:
   jpa:
     hibernate:
       ddl-auto: create-drop
+  flyway:
+    enabled: false
+  sql:
+    init:
+      mode: never
   session:
     store-type: jdbc
     jdbc:
@@ -50,8 +55,3 @@ npm:
   base-url: ${NPM_BASE_URL:http://localhost:81}
   identity: ${NPM_IDENTITY:admin}
   secret: ${NPM_SECRET:changeme}
-
-logging:
-  level:
-    "[org.springframework.jdbc.datasource]": DEBUG
-    "[com.zaxxer.hikari]": DEBUG

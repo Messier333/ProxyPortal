@@ -6,7 +6,11 @@ spring:
     password: ${SPRING_DATASOURCE_PASSWORD:proxyportal}
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    baseline-version: 0
   h2:
     console:
       enabled: false
@@ -23,3 +27,9 @@ server:
     session:
       cookie:
         secure: true
+
+logging:
+  level:
+    root: INFO
+    "[org.springframework.jdbc.datasource]": INFO
+    "[com.zaxxer.hikari]": INFO

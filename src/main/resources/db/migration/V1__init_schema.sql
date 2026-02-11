@@ -1,0 +1,89 @@
+CREATE TABLE IF NOT EXISTS users (
+    id BIGSERIAL PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    nickname VARCHAR(255),
+    role VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS portal_tabs (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    sort_order INTEGER NOT NULL,
+    background_url VARCHAR(255),
+    CONSTRAINT uk_user_tabname UNIQUE (user_id, name),
+    CONSTRAINT fk_portal_tabs_user FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_portal_tabs_user_sort
+    ON portal_tabs (user_id, sort_order);
+
+CREATE TABLE IF NOT EXISTS portal_categories (
+    id BIGSERIAL PRIMARY KEY,
+    tab_id BIGINT NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    sort_order INTEGER NOT NULL,
+    CONSTRAINT uq_portal_categories_tab_name UNIQUE (tab_id, name),
+    CONSTRAINT fk_portal_categories_tab FOREIGN KEY (tab_id) REFERENCES portal_tabs(id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_portal_categories_tab_sort
+    ON portal_categories (tab_id, sort_order);
+
+CREATE TABLE IF NOT EXISTS portal_links (
+    id BIGSERIAL PRIMARY KEY,
+    category_id BIGINT NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    url VARCHAR(255) NOT NULL,
+    icon VARCHAR(200),
+    icon_color VARCHAR(255) NOT NULL,
+    sort_order INTEGER NOT NULL,
+    CONSTRAINT uq_portal_links_category_name UNIQUE (category_id, name),
+    CONSTRAINT uq_portal_links_category_url UNIQUE (category_id, url),
+    CONSTRAINT fk_portal_links_category FOREIGN KEY (category_id) REFERENCES portal_categories(id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_portal_links_category_sort
+    ON portal_links (category_id, sort_order);
+
+CREATE TABLE IF NOT EXISTS user_link (
+    id BIGSERIAL PRIMARY KEY,
+    user_id VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS persistent_logins (
+    username VARCHAR(64) NOT NULL,
+    series VARCHAR(64) PRIMARY KEY,
+    token VARCHAR(64) NOT NULL,
+    last_used TIMESTAMP NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS SPRING_SESSION (
+    PRIMARY_ID CHAR(36) NOT NULL,
+    SESSION_ID CHAR(36) NOT NULL,
+    CREATION_TIME BIGINT NOT NULL,
+    LAST_ACCESS_TIME BIGINT NOT NULL,
+    MAX_INACTIVE_INTERVAL INT NOT NULL,
+    EXPIRY_TIME BIGINT NOT NULL,
+    PRINCIPAL_NAME VARCHAR(100),
+    CONSTRAINT SPRING_SESSION_PK PRIMARY KEY (PRIMARY_ID)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS SPRING_SESSION_IX1
+    ON SPRING_SESSION (SESSION_ID);
+
+CREATE INDEX IF NOT EXISTS SPRING_SESSION_IX2
+    ON SPRING_SESSION (EXPIRY_TIME);
+
+CREATE INDEX IF NOT EXISTS SPRING_SESSION_IX3
+    ON SPRING_SESSION (PRINCIPAL_NAME);
+
+CREATE TABLE IF NOT EXISTS SPRING_SESSION_ATTRIBUTES (
+    SESSION_PRIMARY_ID CHAR(36) NOT NULL,
+    ATTRIBUTE_NAME VARCHAR(200) NOT NULL,
+    ATTRIBUTE_BYTES BYTEA NOT NULL,
+    CONSTRAINT SPRING_SESSION_ATTRIBUTES_PK PRIMARY KEY (SESSION_PRIMARY_ID, ATTRIBUTE_NAME),
+    CONSTRAINT SPRING_SESSION_ATTRIBUTES_FK FOREIGN KEY (SESSION_PRIMARY_ID)
+        REFERENCES SPRING_SESSION(PRIMARY_ID) ON DELETE CASCADE
+);
