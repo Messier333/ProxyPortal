@@ -7,12 +7,14 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.zip.GZIPOutputStream;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,6 +23,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientResponseException;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.messier333.proxyportal.proxygetter.client.NpmTokenProvider;
 import com.messier333.proxyportal.proxygetter.dto.NpmProxyHostDto;
 import com.sun.net.httpserver.HttpExchange;
@@ -29,6 +32,7 @@ import com.sun.net.httpserver.HttpServer;
 
 @ExtendWith(MockitoExtension.class)
 class NpmClientImplTest {
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @Mock
     private NpmTokenProvider tokenProvider;
@@ -46,7 +50,7 @@ class NpmClientImplTest {
         try {
             String baseUrl = "http://localhost:" + server.getAddress().getPort();
             RestClient restClient = RestClient.builder().baseUrl(baseUrl).build();
-            NpmClientImpl client = new NpmClientImpl(restClient, tokenProvider);
+            NpmClientImpl client = new NpmClientImpl(restClient, tokenProvider, OBJECT_MAPPER);
             when(tokenProvider.getValidToken()).thenReturn("token-1");
 
             List<NpmProxyHostDto> result = client.getProxyHosts();
@@ -75,7 +79,7 @@ class NpmClientImplTest {
         try {
             String baseUrl = "http://localhost:" + server.getAddress().getPort();
             RestClient restClient = RestClient.builder().baseUrl(baseUrl).build();
-            NpmClientImpl client = new NpmClientImpl(restClient, tokenProvider);
+            NpmClientImpl client = new NpmClientImpl(restClient, tokenProvider, OBJECT_MAPPER);
             when(tokenProvider.getValidToken()).thenReturn("bad-token", "good-token");
 
             List<NpmProxyHostDto> result = client.getProxyHosts();
@@ -98,7 +102,7 @@ class NpmClientImplTest {
         try {
             String baseUrl = "http://localhost:" + server.getAddress().getPort();
             RestClient restClient = RestClient.builder().baseUrl(baseUrl).build();
-            NpmClientImpl client = new NpmClientImpl(restClient, tokenProvider);
+            NpmClientImpl client = new NpmClientImpl(restClient, tokenProvider, OBJECT_MAPPER);
             when(tokenProvider.getValidToken()).thenReturn("token");
 
             assertThatThrownBy(client::getProxyHosts)
@@ -106,6 +110,35 @@ class NpmClientImplTest {
 
             verify(tokenProvider, never()).resetToken();
             verify(tokenProvider, times(1)).getValidToken();
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    @Test
+    void getProxyHosts_shouldParseGzipBodyEvenWhenContentEncodingHeaderIsMissing() throws Exception {
+        HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
+        server.createContext("/api/nginx/proxy-hosts", exchange -> {
+            byte[] plain = "[{\"domain_names\":[\"gzip.example.com\"]}]".getBytes(StandardCharsets.UTF_8);
+            byte[] gzip = gzip(plain);
+            exchange.getResponseHeaders().add("Content-Type", "application/json;charset=utf-8");
+            exchange.sendResponseHeaders(200, gzip.length);
+            try (OutputStream output = exchange.getResponseBody()) {
+                output.write(gzip);
+            }
+        });
+        server.start();
+
+        try {
+            String baseUrl = "http://localhost:" + server.getAddress().getPort();
+            RestClient restClient = RestClient.builder().baseUrl(baseUrl).build();
+            NpmClientImpl client = new NpmClientImpl(restClient, tokenProvider, OBJECT_MAPPER);
+            when(tokenProvider.getValidToken()).thenReturn("token");
+
+            List<NpmProxyHostDto> result = client.getProxyHosts();
+
+            assertThat(result).hasSize(1);
+            assertThat(result.get(0).getDomain_names()).containsExactly("gzip.example.com");
         } finally {
             server.stop(0);
         }
@@ -136,5 +169,13 @@ class NpmClientImplTest {
                 output.write(body);
             }
         }
+    }
+
+    private byte[] gzip(byte[] source) throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        try (GZIPOutputStream gzipOut = new GZIPOutputStream(out)) {
+            gzipOut.write(source);
+        }
+        return out.toByteArray();
     }
 }
