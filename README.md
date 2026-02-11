@@ -1,4 +1,6 @@
 # ProxyPortal
+<img width="1710" height="880" alt="스크린샷 2026-02-11 21-49-02" src="https://github.com/user-attachments/assets/69071fd8-013d-4171-8e24-2e9f785726a2" />
+
 
 ProxyPortal은 리버스 프록시 환경에서 운영하는 여러 서비스를 한 화면에서 접근하고 관리하기 위한 서버 사이드 포털입니다.  
 탭/카테고리/링크 구조로 서비스를 정리하고, 계정 및 권한 기반으로 접근을 제어합니다.
