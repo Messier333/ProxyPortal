@@ -1,0 +1,33 @@
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/proxyportal}
+    driver-class-name: org.postgresql.Driver
+    username: ${SPRING_DATASOURCE_USERNAME:proxyportal}
+    password: ${SPRING_DATASOURCE_PASSWORD:proxyportal}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+  h2:
+    console:
+      enabled: false
+
+app:
+  security:
+    remember-me:
+      key: ${REMEMBER_ME_KEY}
+      token-validity-seconds: ${REMEMBER_ME_TOKEN_VALIDITY_SECONDS:2592000}
+
+server:
+  forward-headers-strategy: framework
+  servlet:
+    session:
+      cookie:
+        secure: true
+
+logging:
+  level:
+    root: INFO
+    "[org.springframework.jdbc.datasource]": INFO
+    "[com.zaxxer.hikari]": INFO

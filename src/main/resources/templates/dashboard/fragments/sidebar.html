@@ -26,10 +26,11 @@
       </a>
 
       <a class="sb__link"
+         th:if="${isAdmin}"
          th:classappend="${active}=='account' ? ' is-active' : ''"
          th:href="@{/dashboard/account/add}">
         <span class="sb__icon">👤</span>
-        <span>계정 추가</span>
+        <span>계정 관리</span>
       </a>
 
         <a class="sb__link"

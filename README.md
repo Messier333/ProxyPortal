@@ -62,7 +62,7 @@ portal-config(JSON) 주입 <br>
 
 ## 백엔드 구성
 
-- Java 17
+- Java 21
 - Spring Boot
 - Spring MVC
 - Thymeleaf
@@ -98,6 +98,42 @@ git clone https://github.com/your-id/proxyportal.git
 cd proxyportal
 ./gradlew bootRun
 ```
+
+## Docker + GHCR 배포
+
+### 1) GHCR 이미지 자동 빌드/푸시
+
+이 저장소에는 아래 워크플로가 포함되어 있습니다.
+
+- `.github/workflows/docker-ghcr.yml`
+- `dev -> main` PR 머지 시 `ghcr.io/<owner>/<repo>`로 자동 푸시
+
+필수 조건:
+
+- 저장소 Actions 사용 가능
+- 패키지 권한: `packages: write` (워크플로에 이미 포함)
+- 조직/저장소 정책에서 GHCR 푸시 허용
+
+### 2) 컨테이너 실행 예시
+
+```bash
+docker run -d --name proxyportal \
+  -p 8080:8080 \
+  -e PUID=1000 \
+  -e PGID=1000 \
+  -e SPRING_DATASOURCE_URL='jdbc:postgresql://<db-host>:5432/<db-name>' \
+  -e SPRING_DATASOURCE_USERNAME='<db-user>' \
+  -e SPRING_DATASOURCE_PASSWORD='<db-password>' \
+  -e REMEMBER_ME_KEY='<strong-random-secret>' \
+  -e NPM_BASE_URL='http://<npm-host>:81' \
+  -e NPM_IDENTITY='<npm-identity>' \
+  -e NPM_SECRET='<npm-secret>' \
+  ghcr.io/<owner>/<repo>:latest
+```
+
+이미지는 기본적으로 `SPRING_PROFILES_ACTIVE=prod`로 실행됩니다.
+
+빈 PostgreSQL이라면 앱 기동 시 Flyway가 `db/migration` 스키마를 자동 적용합니다.
 
 
 

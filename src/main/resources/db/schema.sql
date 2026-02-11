@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS portal_tabs (
                                            name VARCHAR(255) NOT NULL,
     background_url VARCHAR(1024),
     sort_order INTEGER NOT NULL,
+    CONSTRAINT uq_portal_tabs_user_name UNIQUE (user_id, name),
 
     CONSTRAINT fk_portal_tabs_user
     FOREIGN KEY (user_id) REFERENCES users(id)
@@ -36,6 +37,7 @@ CREATE TABLE IF NOT EXISTS portal_categories (
                                                  tab_id BIGINT NOT NULL,
                                                  name VARCHAR(255) NOT NULL,
     sort_order INTEGER NOT NULL,
+    CONSTRAINT uq_portal_categories_tab_name UNIQUE (tab_id, name),
 
     CONSTRAINT fk_portal_categories_tab
     FOREIGN KEY (tab_id) REFERENCES portal_tabs(id)
@@ -55,6 +57,8 @@ CREATE TABLE IF NOT EXISTS portal_links (
     icon VARCHAR(255),
     icon_color VARCHAR(50),
     sort_order INTEGER NOT NULL,
+    CONSTRAINT uq_portal_links_category_name UNIQUE (category_id, name),
+    CONSTRAINT uq_portal_links_category_url UNIQUE (category_id, url),
 
     CONSTRAINT fk_portal_links_category
     FOREIGN KEY (category_id) REFERENCES portal_categories(id)
@@ -62,3 +66,13 @@ CREATE TABLE IF NOT EXISTS portal_links (
 
 CREATE INDEX IF NOT EXISTS idx_portal_links_category_sort
     ON portal_links (category_id, sort_order);
+
+-- =========================
+-- REMEMBER-ME TOKENS
+-- =========================
+CREATE TABLE IF NOT EXISTS persistent_logins (
+                                                 username VARCHAR(64) NOT NULL,
+    series VARCHAR(64) PRIMARY KEY,
+    token VARCHAR(64) NOT NULL,
+    last_used TIMESTAMP NOT NULL
+    );

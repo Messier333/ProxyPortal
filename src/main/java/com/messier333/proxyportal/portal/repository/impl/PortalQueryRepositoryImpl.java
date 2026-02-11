@@ -113,15 +113,12 @@ public class PortalQueryRepositoryImpl implements PortalQueryRepository {
             return new CategoryResponse(id, name, sort, links);
         }
     }
+
     @Override
     public PortalCategoriesResponse findCategoriesByUsername(String username) {
-        final Long id;
-        final String name;
-        final Integer sort;
-        final List<CategoryResponse> categories = new ArrayList<>();
-
-        
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'findCategoriesByUsername'");
+        List<CategoryResponse> categories = findTabsByUsername(username).tabs().stream()
+                .flatMap(tab -> tab.categories().stream())
+                .toList();
+        return new PortalCategoriesResponse(categories);
     }
 }

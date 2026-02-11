@@ -1,4 +1,10 @@
 package com.messier333.proxyportal.dashboard.dto;
 
-public record UserDashboardVM() {
+import com.messier333.proxyportal.user.entity.Role;
+
+public record UserDashboardVM(
+        Long id,
+        String username,
+        Role role
+) {
 }

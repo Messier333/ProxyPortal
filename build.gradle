@@ -2,7 +2,9 @@ plugins {
 	id 'java'
 	id 'org.springframework.boot' version '3.5.9'
 	id 'io.spring.dependency-management' version '1.1.7'
+	id 'jacoco'
 	id "eclipse"
+	id "org.sonarqube" version "6.0.1.5171"
 }
 
 group = 'com.messier333'
@@ -22,13 +24,18 @@ repositories {
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.flywaydb:flyway-core'
+	implementation 'org.springframework.session:spring-session-jdbc'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
-	runtimeOnly 'com.h2database:h2'
+	developmentOnly 'com.h2database:h2'
+	runtimeOnly 'org.flywaydb:flyway-database-postgresql'
+	runtimeOnly 'org.postgresql:postgresql'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.security:spring-security-test'
+	testRuntimeOnly 'com.h2database:h2'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
@@ -55,11 +62,19 @@ tasks.withType(JavaCompile).configureEach {
     options.generatedSourceOutputDirectory = generatedQuerydslDir
 }
 
-
 tasks.named('test') {
 	useJUnitPlatform()
+	finalizedBy(tasks.named('jacocoTestReport'))
 }
 
+tasks.named('jacocoTestReport') {
+	dependsOn(tasks.named('test'))
+	reports {
+		xml.required = true
+		html.required = true
+		csv.required = false
+	}
+}
 
 eclipse {
     classpath {
@@ -71,4 +86,13 @@ eclipse {
             }
         }
     }
+}
+sonar {
+	properties {
+		property "sonar.projectKey", "proxyportal"
+		property "sonar.projectName", "ProxyPortal"
+		property "sonar.host.url", System.getenv("SONAR_HOST_URL") ?: "https://sonarqube.klore.net"
+		property "sonar.token", System.getenv("SONAR_TOKEN")
+		property "sonar.coverage.jacoco.xmlReportPaths", "build/reports/jacoco/test/jacocoTestReport.xml"
+	}
 }

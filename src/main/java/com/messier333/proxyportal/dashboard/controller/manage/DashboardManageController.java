@@ -1,7 +1,15 @@
 package com.messier333.proxyportal.dashboard.controller.manage;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import com.messier333.proxyportal.portal.dto.response.PortalTabsResponse;
+import com.messier333.proxyportal.portal.dto.response.TabResponse;
+import lombok.NonNull;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.User;
@@ -12,8 +20,12 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.messier333.proxyportal.common.exception.BadRequestException;
+import com.messier333.proxyportal.common.exception.BusinessException;
 import com.messier333.proxyportal.portal.dto.request.CategoryCreateRequest;
 import com.messier333.proxyportal.portal.dto.request.TabCreateRequest;
 import com.messier333.proxyportal.portal.dto.response.CategoryResponse;
@@ -21,49 +33,84 @@ import com.messier333.proxyportal.portal.service.PortalService;
 import com.messier333.proxyportal.proxygetter.service.ProxyGetterService;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 
 @Controller
 @RequestMapping("/dashboard")
 @RequiredArgsConstructor
+@Slf4j
 public class DashboardManageController {
-    private final ProxyGetterService proxyGetterService;
     private final PortalService portalService;
+    private final ProxyGetterService proxyGetterService;
     
-    @SuppressWarnings("null")
     @GetMapping("/manage")
     public String manageView(Authentication auth, Model model){
-        boolean isAdmin = auth != null && auth.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
-        if(isAdmin){
-            model.addAttribute("npmLinks", proxyGetterService.getProxyHostsList());
+        Authentication authentication = Objects.requireNonNull(auth);
+        String username = authentication.getName();
+        boolean isAdmin = isIsAdmin(authentication);
+        var tabs = getPortalTabs(username).tabs();
+        var categories = getStream(tabs)
+                .flatMap(tab -> tab.categories().stream())
+                .collect(Collectors.toList());
+        var links = categories.stream()
+                .flatMap(category -> category.links().stream())
+                .collect(Collectors.toList());
+        model.addAttribute("tabs", tabs);
+        model.addAttribute("categories", categories);
+        model.addAttribute("links", links);
+        model.addAttribute("isAdmin", isAdmin);
+        if (isAdmin) {
+            try {
+                model.addAttribute("npmLinks", proxyGetterService.getProxyHostsList());
+            } catch (Exception e) {
+                log.warn("Failed to fetch NPM proxy hosts", e);
+                model.addAttribute("npmLinks", List.of());
+                model.addAttribute("npmUnavailable", true);
+            }
         }
-        model.addAttribute("tabs", portalService.getPortalTabs(Objects.requireNonNull(auth).getName()).tabs());
-        model.addAttribute("categories");
         return "dashboard/manage";
+    }
+
+    private static @NonNull Stream<TabResponse> getStream(List<TabResponse> tabs) {
+        return tabs.stream();
+    }
+
+    private PortalTabsResponse getPortalTabs(String username) {
+        return portalService.getPortalTabs(username);
+    }
+
+    private boolean isIsAdmin(Authentication authentication) {
+        return isAdmin(authentication);
     }
 
     @PostMapping("/manage/tabs")
     public String createTab(
             @RequestParam("name") String name,
+            @RequestParam(name = "sortOrder", required = false) Integer sortOrder,
             @RequestParam(name = "backgroundImage", required = false) MultipartFile backgroundImage,
-            @AuthenticationPrincipal User user
+            @AuthenticationPrincipal User user,
+            RedirectAttributes redirectAttributes
     ){
-        var tab = portalService.createTab(user.getUsername(), new TabCreateRequest(name,1, null));
-        portalService.uploadTabBackground(user.getUsername(), tab.id(), backgroundImage);
+        try {
+            var tab = portalService.createTab(user.getUsername(), new TabCreateRequest(name, sortOrder, null));
+            portalService.uploadTabBackground(user.getUsername(), tab.id(), backgroundImage);
+        } catch (BusinessException e) {
+            redirectAttributes.addFlashAttribute("toastMessage", e.getMessage());
+        }
         
         return "redirect:/dashboard/manage";
     }
 
     @PostMapping("/manage/tabs/{tabId}/background/remove")
-    public String removeTabBackground(@PathVariable("tabId") Long tabId, @AuthenticationPrincipal User user) {
+    public String removeTabBackground(@PathVariable Long tabId, @AuthenticationPrincipal User user) {
         portalService.clearTabBackground(user.getUsername(), tabId);
         return "redirect:/dashboard/manage";
     }
 
     @PostMapping("/manage/tabs/{tabId}/background")
     public String uploadTabBackground(
-            @PathVariable("tabId") Long tabId,
+            @PathVariable Long tabId,
             @RequestParam("backgroundImage") MultipartFile backgroundImage,
             @AuthenticationPrincipal User user
     ) {
@@ -73,7 +120,7 @@ public class DashboardManageController {
 
     @PostMapping("/manage/tabs/{tabId}/rename")
     public String renameTab(
-            @PathVariable("tabId") Long tabId,
+            @PathVariable Long tabId,
             @RequestParam("name") String name,
             @AuthenticationPrincipal User user
     ) {
@@ -81,10 +128,193 @@ public class DashboardManageController {
         return "redirect:/dashboard/manage";
     }
 
-    @PostMapping("/manage/categories")
-    public String postMethodName(@RequestParam("name") String name, @RequestParam("tabId") Long tabId, @AuthenticationPrincipal User user) {
-        CategoryResponse categoryResponse = portalService.createCategory(user.getUsername(), tabId, new CategoryCreateRequest(name, null, 1));
-        portalService.addCategorytoTab(user.getUsername(), tabId, categoryResponse.id());
+    @PostMapping("/tabs/{tabId}/delete")
+    public String deleteTab(
+            @PathVariable Long tabId,
+            @AuthenticationPrincipal User user,
+            RedirectAttributes redirectAttributes
+    ) {
+        try {
+            portalService.deleteTab(user.getUsername(), tabId);
+            redirectAttributes.addFlashAttribute("toastMessage", "탭을 삭제했습니다.");
+        } catch (BusinessException e) {
+            redirectAttributes.addFlashAttribute("toastMessage", e.getMessage());
+        }
         return "redirect:/dashboard/manage";
-    }    
+    }
+
+    @PostMapping("/manage/categories")
+    public String createCategory(
+            @RequestParam("name") String name,
+            @RequestParam("tabId") Long tabId,
+            @RequestParam(name = "sortOrder", required = false) Integer sortOrder,
+            @AuthenticationPrincipal User user,
+            RedirectAttributes redirectAttributes
+    ) {
+        try {
+            CategoryResponse categoryResponse = portalService.createCategory(user.getUsername(), tabId, new CategoryCreateRequest(name, null, sortOrder));
+            portalService.addCategorytoTab(user.getUsername(), tabId, categoryResponse.id());
+        } catch (BusinessException e) {
+            redirectAttributes.addFlashAttribute("toastMessage", e.getMessage());
+        }
+        return "redirect:/dashboard/manage";
+    }
+
+    @PostMapping("/categories/{categoryId}/delete")
+    public String deleteCategory(
+            @PathVariable Long categoryId,
+            @AuthenticationPrincipal User user,
+            RedirectAttributes redirectAttributes
+    ) {
+        try {
+            portalService.deleteCategory(user.getUsername(), categoryId);
+            redirectAttributes.addFlashAttribute("toastMessage", "카테고리를 삭제했습니다.");
+        } catch (BusinessException e) {
+            redirectAttributes.addFlashAttribute("toastMessage", e.getMessage());
+        }
+        return "redirect:/dashboard/manage";
+    }
+
+    @PostMapping("/links")
+    public String createLink(
+            @RequestParam("name") String name,
+            @RequestParam("url") String url,
+            @RequestParam("categoryId") Long categoryId,
+            @RequestParam(name = "sortOrder", required = false) Integer sortOrder,
+            @RequestParam(name = "icon", required = false) String icon,
+            @RequestParam(name = "iconColor", required = false) String iconColor,
+            @AuthenticationPrincipal User user,
+            RedirectAttributes redirectAttributes
+    ) {
+        try {
+            portalService.createLink(user.getUsername(), categoryId, name, url, icon, iconColor, sortOrder);
+        } catch (BusinessException e) {
+            redirectAttributes.addFlashAttribute("toastMessage", e.getMessage());
+        }
+        return "redirect:/dashboard/manage";
+    }
+
+    @PostMapping("/links/{linkId}/delete")
+    public String deleteLink(
+            @PathVariable Long linkId,
+            @AuthenticationPrincipal User user,
+            RedirectAttributes redirectAttributes
+    ) {
+        try {
+            portalService.deleteLink(user.getUsername(), linkId);
+            redirectAttributes.addFlashAttribute("toastMessage", "링크를 삭제했습니다.");
+        } catch (BusinessException e) {
+            redirectAttributes.addFlashAttribute("toastMessage", e.getMessage());
+        }
+        return "redirect:/dashboard/manage";
+    }
+
+    @PostMapping("/manage/tabs/{tabId}/sort")
+    public String updateTabSort(
+            @PathVariable Long tabId,
+            @RequestParam("sortOrder") Integer sortOrder,
+            @AuthenticationPrincipal User user,
+            RedirectAttributes redirectAttributes
+    ) {
+        try {
+            portalService.updateTabSortOrder(user.getUsername(), tabId, sortOrder);
+        } catch (BusinessException e) {
+            redirectAttributes.addFlashAttribute("toastMessage", e.getMessage());
+        }
+        return "redirect:/dashboard/manage";
+    }
+
+    @PostMapping("/manage/categories/{categoryId}/sort")
+    public String updateCategorySort(
+            @PathVariable Long categoryId,
+            @RequestParam("sortOrder") Integer sortOrder,
+            @AuthenticationPrincipal User user,
+            RedirectAttributes redirectAttributes
+    ) {
+        try {
+            portalService.updateCategorySortOrder(user.getUsername(), categoryId, sortOrder);
+        } catch (BusinessException e) {
+            redirectAttributes.addFlashAttribute("toastMessage", e.getMessage());
+        }
+        return "redirect:/dashboard/manage";
+    }
+
+    @PostMapping("/manage/links/{linkId}/sort")
+    public String updateLinkSort(
+            @PathVariable Long linkId,
+            @RequestParam("sortOrder") Integer sortOrder,
+            @AuthenticationPrincipal User user,
+            RedirectAttributes redirectAttributes
+    ) {
+        try {
+            portalService.updateLinkSortOrder(user.getUsername(), linkId, sortOrder);
+        } catch (BusinessException e) {
+            redirectAttributes.addFlashAttribute("toastMessage", e.getMessage());
+        }
+        return "redirect:/dashboard/manage";
+    }
+
+    @ResponseBody
+    @PostMapping("/manage/reorder/tabs")
+    public ResponseEntity<Void> reorderTabs(
+            @RequestParam("ids") String ids,
+            @AuthenticationPrincipal User user
+    ) {
+        try {
+            portalService.reorderTabsByIds(user.getUsername(), parseOrderedIds(ids));
+            return ResponseEntity.noContent().build();
+        } catch (BusinessException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @ResponseBody
+    @PostMapping("/manage/reorder/categories")
+    public ResponseEntity<Void> reorderCategories(
+            @RequestParam("parentId") Long tabId,
+            @RequestParam("ids") String ids,
+            @AuthenticationPrincipal User user
+    ) {
+        try {
+            portalService.reorderCategoriesByIds(user.getUsername(), tabId, parseOrderedIds(ids));
+            return ResponseEntity.noContent().build();
+        } catch (BusinessException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @ResponseBody
+    @PostMapping("/manage/reorder/links")
+    public ResponseEntity<Void> reorderLinks(
+            @RequestParam("parentId") Long categoryId,
+            @RequestParam("ids") String ids,
+            @AuthenticationPrincipal User user
+    ) {
+        try {
+            portalService.reorderLinksByIds(user.getUsername(), categoryId, parseOrderedIds(ids));
+            return ResponseEntity.noContent().build();
+        } catch (BusinessException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    private List<Long> parseOrderedIds(String rawIds) {
+        if (rawIds == null || rawIds.isBlank()) {
+            throw new BadRequestException("ids must not be blank");
+        }
+        try {
+            return Arrays.stream(rawIds.split(","))
+                    .map(String::trim)
+                    .filter(value -> !value.isBlank())
+                    .map(Long::parseLong)
+                    .toList();
+        } catch (NumberFormatException e) {
+            throw new BadRequestException("invalid ids format");
+        }
+    }
+
+    private boolean isAdmin(Authentication auth) {
+        return auth.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
+    }
 }

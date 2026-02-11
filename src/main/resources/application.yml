@@ -12,8 +12,42 @@ spring:
     multipart:
       max-file-size: 10MB
       max-request-size: 10MB
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+  flyway:
+    enabled: false
+  sql:
+    init:
+      mode: never
+  session:
+    store-type: jdbc
+    jdbc:
+      initialize-schema: never
+
+server:
+  servlet:
+    session:
+      cookie:
+        http-only: true
+        same-site: lax
 
 app:
+  security:
+    remember-me:
+      key: ${REMEMBER_ME_KEY:proxyportal-remember-me-dev-key-change-this}
+      token-validity-seconds: ${REMEMBER_ME_TOKEN_VALIDITY_SECONDS:2592000}
+    login-attempt:
+      enabled: true
+      max-failures-per-user-ip: 5
+      user-ip-window: 15m
+      user-ip-lock: 15m
+      max-failures-per-ip: 30
+      ip-window: 5m
+      ip-lock: 30m
+      max-failures-per-username: 20
+      username-window: 1h
+      username-lock: 1h
   upload:
     root: uploads
 
@@ -21,8 +55,3 @@ npm:
   base-url: ${NPM_BASE_URL:http://localhost:81}
   identity: ${NPM_IDENTITY:admin}
   secret: ${NPM_SECRET:changeme}
-
-logging:
-  level:
-    org.springframework.jdbc.datasource: DEBUG
-    com.zaxxer.hikari: DEBUG
