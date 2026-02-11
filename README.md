@@ -85,10 +85,6 @@ services:
       - "<proxyportal port>:8080"
     volumes:
       - "<image path>:/app/uploads"
-
-volumes:
-  proxyportal_postgres_data:
-  proxyportal_uploads:
 ```
 
 실행:
