@@ -9,8 +9,6 @@ spring:
       ddl-auto: validate
   flyway:
     enabled: true
-    baseline-on-migrate: true
-    baseline-version: 0
   h2:
     console:
       enabled: false
