@@ -16,10 +16,13 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.rememberme.JdbcTokenRepositoryImpl;
 import org.springframework.security.web.authentication.rememberme.PersistentTokenRepository;
 import org.springframework.security.web.SecurityFilterChain;
 
+import com.messier333.proxyportal.security.filter.LoginAttemptFilter;
+import com.messier333.proxyportal.security.handler.LoginFailureHandler;
 import com.messier333.proxyportal.user.service.CustomUserDetailService;
 
 import lombok.RequiredArgsConstructor;
@@ -50,6 +53,8 @@ public class SecurityConfig {
             """;
 
     private final CustomUserDetailService customUserDetailService;
+    private final LoginAttemptFilter loginAttemptFilter;
+    private final LoginFailureHandler loginFailureHandler;
 
     @Value("${app.security.remember-me.key}")
     private String rememberMeKey;
@@ -69,7 +74,7 @@ public class SecurityConfig {
                 )
                 .formLogin(form -> form
                                 .loginPage("/login")
-                                .failureUrl("/login?error")
+                                .failureHandler(loginFailureHandler)
                                 .permitAll()
                 )
                 .rememberMe(rememberMe -> rememberMe
@@ -87,7 +92,8 @@ public class SecurityConfig {
                 )
                 .headers(headers -> headers
                         .frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin)
-                );
+                )
+                .addFilterBefore(loginAttemptFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 
