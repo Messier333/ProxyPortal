@@ -113,9 +113,6 @@ docker compose logs -f app
 
 - 컨테이너 이미지는 기본적으로 `SPRING_PROFILES_ACTIVE=prod`로 실행됩니다.
 - 빈 PostgreSQL에 처음 붙으면 Flyway가 `db/migration` SQL을 자동 적용합니다.
-- 데이터는 named volume에 유지됩니다.
-  - `proxyportal_postgres_data`
-  - `proxyportal_uploads`
 
 ## Acknowledgement
 
